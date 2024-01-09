@@ -1,1 +1,7 @@
-# slam-project-dkoh555
+# ME495 Sensing, Navigation and Machine Learning For Robotics
+* Damien Koh
+* Winter 2024
+
+# Package List
+This repository consists of several ROS packages
+- <PACKAGE1> - <one sentence description>
