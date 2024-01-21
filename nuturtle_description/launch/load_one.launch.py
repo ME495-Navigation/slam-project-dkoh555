@@ -57,7 +57,7 @@ def generate_launch_description():
                 condition=IfCondition(
                     EqualsSubstitution(LaunchConfiguration("use_rviz"), "true")
                 ),
-                # arguments=['-d' + os.path.join(get_package_share_directory('nuturtle_description'), 'config', 'basic_purple.rviz')],
+                arguments=['-d' + os.path.join(get_package_share_directory('nuturtle_description'), 'config', 'basic_purple.rviz')],
                 on_exit=Shutdown()
             ),
         
