@@ -63,9 +63,12 @@ def generate_launch_description():
                 ],
             ),
 
-        # Initialize full rviz config file name
+        # Initialize full rviz config variables
         SetLaunchConfiguration(name='config_file',
                                value=['basic_', LaunchConfiguration('color'), '.rviz']),
+
+        SetLaunchConfiguration(name='fixed_frame',
+                               value=[LaunchConfiguration('namespace'), '/base_footprint']),
         
         # Launch rviz with config file
         Node(
@@ -75,7 +78,7 @@ def generate_launch_description():
                 condition=IfCondition(
                     EqualsSubstitution(LaunchConfiguration("use_rviz"), "true")
                 ),
-                arguments=['-d', [os.path.join(get_package_share_directory('nuturtle_description'), 'config/'), LaunchConfiguration('config_file')]],
+                arguments=['-d', [os.path.join(get_package_share_directory('nuturtle_description'), 'config/'), LaunchConfiguration('config_file')], '-f', [LaunchConfiguration('fixed_frame')]],
                 on_exit=Shutdown()
             ),
         
