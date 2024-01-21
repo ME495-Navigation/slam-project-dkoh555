@@ -1,0 +1,92 @@
+<launch>
+    <!-- Begin rviz with the global variables and frames -->
+    <node name="rviz2"
+        pkg ="rviz2"
+        exec="rviz2"
+        args="-d $(find-pkg-share nuturtle_description)/config/basic_all.rviz -f nusim/world"/> 
+
+    <!-- Begin Purple turtlebot -->
+    <group>
+        <push-ros-namespace namespace="purple"/>
+        <include file="$(find-pkg-share nuturtle_description)/launch/load_one.launch.py" >
+            <arg name="color" value="purple"/>
+            <arg name="use_rviz" value="false"/>
+        </include>
+    </group>
+    <node pkg="tf2_ros"
+    exec="static_transform_publisher"
+    name="purple_broadcaster"
+    args="--frame-id nusim/world 
+            --child-frame-id purple/base_footprint
+            --x 0 
+            --y -0.9 
+            --z 0 
+            --qx 0 
+            --qy 0 
+            --qz 0 
+            --qw 1"/>
+
+    <!-- Begin Red turtlebot -->
+    <group>
+        <push-ros-namespace namespace="red"/>
+        <include file="$(find-pkg-share nuturtle_description)/launch/load_one.launch.py" >
+            <arg name="color" value="red"/>
+            <arg name="use_rviz" value="false"/>
+        </include>
+    </group>
+    <node pkg="tf2_ros"
+    exec="static_transform_publisher"
+    name="red_broadcaster"
+    args="--frame-id nusim/world 
+            --child-frame-id red/base_footprint
+            --x 0.3 
+            --y 0 
+            --z 0 
+            --qx 0 
+            --qy 0 
+            --qz 0 
+            --qw 1"/>
+
+    <!-- Begin Green turtlebot -->
+    <group>
+        <push-ros-namespace namespace="green"/>
+        <include file="$(find-pkg-share nuturtle_description)/launch/load_one.launch.py" >
+            <arg name="color" value="green"/>
+            <arg name="use_rviz" value="false"/>
+        </include>
+    </group>
+    <node pkg="tf2_ros"
+    exec="static_transform_publisher"
+    name="green_broadcaster"
+    args="--frame-id nusim/world 
+            --child-frame-id green/base_footprint
+            --x 0
+            --y 0.6 
+            --z 0 
+            --qx 0 
+            --qy 0 
+            --qz 0 
+            --qw 1"/>
+
+    <!-- Begin Blue turtlebot -->
+    <group>
+        <push-ros-namespace namespace="blue"/>
+        <include file="$(find-pkg-share nuturtle_description)/launch/load_one.launch.py" >
+            <arg name="color" value="blue"/>
+            <arg name="use_rviz" value="false"/>
+        </include>
+    </group>
+    <node pkg="tf2_ros"
+    exec="static_transform_publisher"
+    name="blue_broadcaster"
+    args="--frame-id nusim/world 
+            --child-frame-id blue/base_footprint
+            --x -0.71 
+            --y 0 
+            --z 0 
+            --qx 0 
+            --qy 0 
+            --qz 0 
+            --qw 1"/>
+
+</launch>
