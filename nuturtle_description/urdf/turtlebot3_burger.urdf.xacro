@@ -13,17 +13,12 @@
   <xacro:property name="track_width" value="${props['track_width']}"/>
   <xacro:property name="collision_radius" value="${props['collision_radius']}"/>
 
-  <!-- Init colour -->
-  <material name="black">
-      <color rgba="0.0 0.0 0.0 1.0"/>
-  </material>
+  <!-- xacro URDF arguments -->
+  <xacro:property name="color" value="$(arg color)" />
 
+  <!-- Init colour -->
   <material name="dark">
     <color rgba="0.3 0.3 0.3 1.0"/>
-  </material>
-
-  <material name="light_black">
-    <color rgba="0.4 0.4 0.4 1.0"/>
   </material>
 
   <material name="blue">
@@ -34,24 +29,12 @@
     <color rgba="0.0 0.8 0.0 1.0"/>
   </material>
 
-  <material name="grey">
-    <color rgba="0.5 0.5 0.5 1.0"/>
-  </material>
-
-  <material name="orange">
-    <color rgba="1.0 0.4235 0.0392 1.0"/>
-  </material>
-
-  <material name="brown">
-    <color rgba="0.8706 0.8118 0.7647 1.0"/>
-  </material>
-
   <material name="red">
     <color rgba="0.8 0.0 0.0 1.0"/>
   </material>
 
-  <material name="white">
-    <color rgba="1.0 1.0 1.0 1.0"/>
+  <material name="purple">
+    <color rgba="0.3 0.16 0.52 1.0"/>
   </material>
 
   <link name="base_footprint"/>
@@ -68,7 +51,7 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/burger_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="light_black"/>
+      <material name="${color}"/>
     </visual>
 
     <collision>

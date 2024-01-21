@@ -6,8 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Grid1
         - /RobotModel1
-        - /RobotModel1/Description Topic1
       Splitter Ratio: 0.5
     Tree Height: 719
   - Class: rviz_common/Selection
@@ -47,7 +47,7 @@ Visualization Manager:
         Z: 0
       Plane: XY
       Plane Cell Count: 16
-      Reference Frame: purple/base_footprint
+      Reference Frame: green/base_footprint
       Value: true
     - Alpha: 1
       Class: rviz_default_plugins/RobotModel
@@ -104,14 +104,14 @@ Visualization Manager:
         Inertia: false
         Mass: false
       Name: RobotModel
-      TF Prefix: purple
+      TF Prefix: green
       Update Interval: 0
       Value: true
       Visual Enabled: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: purple/base_footprint
+    Fixed Frame: green/base_footprint
     Frame Rate: 30
   Name: root
   Tools:
@@ -154,25 +154,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 8.008934020996094
+      Distance: 7.468865394592285
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -3.4905197620391846
-        Y: 4.2946062088012695
-        Z: -2.450631856918335
+        X: -2.9968225955963135
+        Y: 4.820388317108154
+        Z: -2.2084922790527344
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.42039862275123596
+      Pitch: 0.38539865612983704
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.378589153289795
+      Yaw: 5.253588676452637
     Saved: ~
 Window Geometry:
   Displays:

@@ -1,7 +1,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetLaunchConfiguration, Shutdown
 from launch.substitutions import Command, LaunchConfiguration, \
-                                 TextSubstitution, PathJoinSubstitution, EqualsSubstitution
+                                 TextSubstitution, PathJoinSubstitution, EqualsSubstitution, PythonExpression
 from launch.conditions import IfCondition
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare, ExecutableInPackage
@@ -23,6 +23,15 @@ def generate_launch_description():
                               default_value='true',
                               description='Whether the joint state publisher publishes default states'),
     
+        DeclareLaunchArgument(name='color',
+                              default_value='purple',
+                              description='The color of the turtlebot in rviz',
+                              choices=['purple', 'red', 'green', 'blue']),
+
+        DeclareLaunchArgument(name='namespace',
+                              default_value=LaunchConfiguration('color'),
+                              description='The namespace of the turtlebot in rviz'),
+    
         # Launch the robot state publisher
         Node(
                 package="robot_state_publisher",
@@ -42,13 +51,22 @@ def generate_launch_description():
                                             "turtlebot3_burger.urdf.xacro",
                                         ]
                                     ),
+                                    TextSubstitution(text=" color:="), # Why does this work?
+                                    LaunchConfiguration('color'),
                                 ]
                             )
+                        ),
+                        "frame_prefix": ParameterValue(
+                            PythonExpression(["'", LaunchConfiguration('namespace'), "/'"])
                         )
                     }
                 ],
             ),
 
+        # Initialize full rviz config file name
+        SetLaunchConfiguration(name='config_file',
+                               value=['basic_', LaunchConfiguration('color'), '.rviz']),
+        
         # Launch rviz with config file
         Node(
                 package="rviz2",
@@ -57,28 +75,17 @@ def generate_launch_description():
                 condition=IfCondition(
                     EqualsSubstitution(LaunchConfiguration("use_rviz"), "true")
                 ),
-                arguments=['-d' + os.path.join(get_package_share_directory('nuturtle_description'), 'config', 'basic_purple.rviz')],
+                arguments=['-d', [os.path.join(get_package_share_directory('nuturtle_description'), 'config/'), LaunchConfiguration('config_file')]],
                 on_exit=Shutdown()
             ),
         
         # Launch the joint_state_publisher that then publishes default states
-            Node(
-                package="joint_state_publisher",
-                executable="joint_state_publisher",
-                name="joint_state_publisher",
-                condition=IfCondition(
-                    EqualsSubstitution(LaunchConfiguration("use_jsp"), "true")
-                ),
+        Node(
+            package="joint_state_publisher",
+            executable="joint_state_publisher",
+            name="joint_state_publisher",
+            condition=IfCondition(
+                EqualsSubstitution(LaunchConfiguration("use_jsp"), "true")
             ),
+        ),
     ])
-
-
-
-
-
-    
-    
-
-                                   
-                                     
-    
