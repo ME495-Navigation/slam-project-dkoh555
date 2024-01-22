@@ -12,6 +12,12 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 # Specify additional compilation flags
 target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic)
 
+# Include the include directories and their header files
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
+    $<INSTALL_INTERFACE:include/>)
+
 ##############################
 ## Additional Functionality ##
 ##############################

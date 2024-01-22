@@ -3,6 +3,9 @@
 /// \file
 /// \brief Two-dimensional geometric primitives.
 
+// Modified for nuturtle_description
+#include <cmath>
+
 
 #include <iosfwd> // contains forward definitions for iostream objects
 namespace turtlelib
@@ -21,6 +24,7 @@ namespace turtlelib
     /// if given a compile-time constant as input
     constexpr bool almost_equal(double d1, double d2, double epsilon=1.0e-12)
     {
+        return std::abs(d1 - d2) < epsilon;
     }
 
     /// \brief convert degrees to radians
@@ -28,6 +32,7 @@ namespace turtlelib
     /// \returns radians
     constexpr double deg2rad(double deg)
     {
+        return deg * (PI/180.0);
     }
 
     /// \brief convert radians to degrees
@@ -35,6 +40,7 @@ namespace turtlelib
     /// \returns the angle in degrees
     constexpr double rad2deg(double rad)
     {
+        return rad * (180.0/PI);
     }
 
     /// \brief wrap an angle to (-PI, PI]
