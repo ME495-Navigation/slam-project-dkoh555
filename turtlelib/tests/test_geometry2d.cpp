@@ -47,4 +47,21 @@ namespace turtlelib {
         t_deg = 0.0;
         REQUIRE_THAT(rad2deg(t_rad), Catch::Matchers::WithinAbs(t_deg, TOLERANCE));
     }
+
+    TEST_CASE("normalize_angle", "geometry2d") {
+        /// Test case conversions found via https://www.rapidtables.com/convert/number/radians-to-degrees.html
+        // 3 * PI rad -> PI rad normalized
+        double t_degree = 3 * PI;
+        double t_normalized = PI;
+        REQUIRE_THAT(normalize_angle(t_degree), Catch::Matchers::WithinAbs(t_normalized, TOLERANCE));
+        // - PI rad -> 0 rad normalized
+        t_degree = - PI;
+        t_normalized = PI;
+        REQUIRE_THAT(normalize_angle(t_degree), Catch::Matchers::WithinAbs(t_normalized, TOLERANCE));
+        // 5 * PI/2 rad -> PI/2 rad normalized
+        t_degree = 5 * PI/2;
+        t_normalized = PI/2;
+        REQUIRE_THAT(normalize_angle(t_degree), Catch::Matchers::WithinAbs(t_normalized, TOLERANCE));
+    }
+
 }
