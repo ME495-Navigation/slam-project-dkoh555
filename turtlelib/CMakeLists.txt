@@ -60,6 +60,12 @@ target_link_libraries(test_se2d ${PROJECT_NAME} Catch2::Catch2WithMain)
 # register the test with CTest, telling it what executable to run
 add_test(NAME Testing_se2d COMMAND test_se2d)
 
+# Test for svg.cpp
+add_executable(test_svg tests/test_svg.cpp)
+target_link_libraries(test_svg ${PROJECT_NAME} Catch2::Catch2WithMain)
+# register the test with CTest, telling it what executable to run
+add_test(NAME Testing_svg COMMAND test_svg)
+
 ###
 ### Do I need... any of the below stuff?
 ###
