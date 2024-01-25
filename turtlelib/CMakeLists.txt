@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.22) # Set the minimum version of cmake
 project(turtlelib)
 
 # Create a library
-add_library(${PROJECT_NAME} src/geometry2d.cpp src/se2d.cpp)
+add_library(${PROJECT_NAME} src/geometry2d.cpp src/se2d.cpp src/svg.cpp)
 
 # Enable C++17 support
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
