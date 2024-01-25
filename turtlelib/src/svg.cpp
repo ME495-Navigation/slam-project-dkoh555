@@ -10,12 +10,16 @@ namespace turtlelib {
         elements.push_back("</svg>");
         
         std::ofstream file(filename);
-        if (file.is_open()) {
-            for (const std::string& element : elements) {
+        if (file.is_open()) 
+        {
+            for (const std::string& element : elements)
+            {
                 file << element << "\n";
             }
             file.close();
-        } else {
+        }
+        else 
+        {
             std::cerr << "Unable to open file: " << filename << std::endl;
         }
     }
@@ -26,24 +30,22 @@ namespace turtlelib {
     }
 
     void SVG::draw_rectangle(int x, int y, int w, int h) {
-        elements.push_back("<rect x=\"" + std::to_string(x) + "\" y=\"" + std::to_string(y) +
-                        "\" width=\"" + std::to_string(w) + "\" height=\"" + std::to_string(h) + "\"/>");
+        elements.push_back("<rect x=\"" + std::to_string(x) + "\" y=\"" + std::to_string(y) + "\" width=\"" + std::to_string(w) + "\" height=\"" + std::to_string(h) + "\"/>");
     }
 
     void SVG::draw_circle(int x, int y, int rad, const std::string& color) {
-        elements.push_back("<circle cx=\"" + std::to_string(x) + "\" cy=\"" + std::to_string(y) +
-                        "\" r=\"" + std::to_string(rad) + "\" stroke=\"" + color + "\" fill=\"" + color + "\" stroke-width=\"1\"/>");
+        elements.push_back("<circle cx=\"" + std::to_string(x) + "\" cy=\"" + std::to_string(y) + "\" r=\"" + std::to_string(rad) + "\" stroke=\"" + color + "\" fill=\"" + color + "\" stroke-width=\"1\"/>");
     }
 
     void SVG::add_text(int x, int y, const std::string& text) {
         elements.push_back("<text x=\"" + std::to_string(x) + "\" y=\"" + std::to_string(y) + "\">" + text + "</text>");
     }
 
-    int SVG::get_width(){
+    int SVG::get_width() {
         return width;
     }
 
-    int SVG::get_height(){
+    int SVG::get_height() {
         return height;
     }
 }

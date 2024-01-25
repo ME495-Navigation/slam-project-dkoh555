@@ -4,7 +4,8 @@ cmake_minimum_required(VERSION 3.22) # Set the minimum version of cmake
 project(turtlelib)
 
 # Create a library
-add_library(${PROJECT_NAME} src/geometry2d.cpp src/se2d.cpp src/svg.cpp)
+add_library(${PROJECT_NAME} src/geometry2d.cpp src/se2d.cpp
+            src/svg.cpp src/frame_main.cpp)
 
 # Enable C++17 support
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
@@ -17,6 +18,12 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
     $<INSTALL_INTERFACE:include/>)
+
+# frame_main executable
+add_executable(frame_main src/frame_main.cpp)
+target_link_libraries(frame_main turtlelib)
+install(TARGETS frame_main turtlelib
+        EXPORT turtlelib-targets)
 
 ##############################
 ## Additional Functionality ##

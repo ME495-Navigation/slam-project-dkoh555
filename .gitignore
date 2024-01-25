@@ -1,3 +1,4 @@
 .vscode
 turtlelib/build
 turtlelib/tests/Testing
+turtlelib/tmp
