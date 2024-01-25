@@ -134,11 +134,11 @@ namespace turtlelib {
 
     TEST_CASE("add_point_and_vector", "geometry2d") {
         // Standard test
-        REQUIRE_THAT((Point2D{3.4, 0.0} + Vector2D{3.4, 5.5}).x, Catch::Matchers::WithinAbs((Point2D{0.0, -5.5}).x, TOLERANCE));
-        REQUIRE_THAT((Point2D{3.4, 0.0} + Vector2D{3.4, 5.5}).y, Catch::Matchers::WithinAbs(Point2D{0.0, -5.5}.y, TOLERANCE));
+        REQUIRE_THAT((Point2D{3.4, 0.0} + Vector2D{3.4, 5.5}).x, Catch::Matchers::WithinAbs((Point2D{6.8, 5.5}).x, TOLERANCE));
+        REQUIRE_THAT((Point2D{3.4, 0.0} + Vector2D{3.4, 5.5}).y, Catch::Matchers::WithinAbs(Point2D{6.8, 5.5}.y, TOLERANCE));
 
         // Standard test no.2
-        REQUIRE_THAT((Point2D{18.4, 9.3} + Vector2D{-4.4, 2.1}).y, Catch::Matchers::WithinAbs((Point2D{22.8, 7.2}).y, TOLERANCE));
+        REQUIRE_THAT((Point2D{18.4, 9.3} + Vector2D{-4.4, 2.1}).y, Catch::Matchers::WithinAbs((Point2D{14.0, 11.4}).y, TOLERANCE));
     }
 
     TEST_CASE("output_vector", "geometry2d") {

@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.22) # Set the minimum version of cmake
 project(turtlelib)
 
 # Create a library
-add_library(${PROJECT_NAME} src/geometry2d.cpp)
+add_library(${PROJECT_NAME} src/geometry2d.cpp src/se2d.cpp)
 
 # Enable C++17 support
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
@@ -48,10 +48,17 @@ include(CTest)
 find_package(Catch2 3 REQUIRED)
 
 # A test is just an executable that is linked against the unit testing library
-add_executable(${PROJECT_NAME}_test tests/test_geometry2d.cpp)
-target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME} Catch2::Catch2WithMain)
+# Test for geometry2d.hpp
+add_executable(test_geometry2d tests/test_geometry2d.cpp)
+target_link_libraries(test_geometry2d ${PROJECT_NAME} Catch2::Catch2WithMain)
 # register the test with CTest, telling it what executable to run
-add_test(NAME Testing_${PROJECT_NAME} COMMAND ${PROJECT_NAME}_test)
+add_test(NAME Testing_Geometry2d COMMAND test_geometry2d)
+
+# Test for se2d.cpp
+add_executable(test_se2d tests/test_se2d.cpp)
+target_link_libraries(test_se2d ${PROJECT_NAME} Catch2::Catch2WithMain)
+# register the test with CTest, telling it what executable to run
+add_test(NAME Testing_se2d COMMAND test_se2d)
 
 ###
 ### Do I need... any of the below stuff?

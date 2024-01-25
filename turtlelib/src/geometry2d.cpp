@@ -33,8 +33,8 @@ namespace turtlelib {
 
     Point2D operator+(const Point2D & tail, const Vector2D & disp) {
         Point2D pnt;
-        pnt.x = tail.x - disp.x;
-        pnt.y = tail.y - disp.y;
+        pnt.x = tail.x + disp.x;
+        pnt.y = tail.y + disp.y;
         return pnt;
     }
 
