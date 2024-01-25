@@ -7,15 +7,49 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
+###########
+## Build ##
+###########
+
+ament_export_dependencies(rclcpp geometry_msgs sensor_msgs)
+
+set(NUSIM_AMENT_TARGET_DEPENDENCIES
+  rclcpp geometry_msgs sensor_msgs
+)
+set(NUSIM_TARGET_LINK_LIBRARIES
+  yaml-cpp
+  "${cpp_typesupport_target}"
+)
+
+# add_executable(nusim src/nusim.cpp)
+# target_include_directories(nusim PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include>)
+# target_compile_features(nusim PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+
+# nusim node
 add_executable(nusim src/nusim.cpp)
-target_include_directories(nusim PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_features(nusim PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+set_target_properties(nusim
+  PROPERTIES
+  OUTPUT_NAME nusim
+  PREFIX ""
+)
+ament_target_dependencies(nusim
+  ${NUSIM_AMENT_TARGET_DEPENDENCIES}
+)
+target_link_libraries(nusim
+  ${NUSIM_TARGET_LINK_LIBRARIES}
+)
+
+#############
+## Install ##
+#############
 
 install(TARGETS nusim
   DESTINATION lib/${PROJECT_NAME})
