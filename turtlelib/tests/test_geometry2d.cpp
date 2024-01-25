@@ -188,4 +188,11 @@ namespace turtlelib {
         t_is >> t_vector;
         REQUIRE(((t_vector.x == -1.2) && (t_vector.y == -3.4056)));
     }
+
+    TEST_CASE( "normalized_vector", "geometry2d" ) 
+    {
+        REQUIRE_THAT(normalize_angle(1), Catch::Matchers::WithinAbs(1.0,1.0e-6));
+        REQUIRE_THAT(normalize_angle(3.0*PI/2.0), Catch::Matchers::WithinAbs(-PI/2.0,1.0e-6));
+        REQUIRE_THAT(normalize_angle(-5.0*PI/2.0), Catch::Matchers::WithinAbs(-PI/2.0,1.0e-6));
+    }
 }

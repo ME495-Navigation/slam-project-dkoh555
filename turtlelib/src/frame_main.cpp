@@ -10,9 +10,6 @@ using turtlelib::Point2D;
 using turtlelib::Vector2D;
 using turtlelib::Twist2D;
 
-// Declare helper function
-Vector2D normalizeVector(const Vector2D & v);
-
 int main()
 {
     SVG svg(816, 1056);
@@ -130,22 +127,4 @@ int main()
     // Save the provided SVG code to the file
     svg.save_file("../tmp/frames.svg", svgCode);
     return 0;
-}
-
-// Helper function
-Vector2D normalizeVector(const Vector2D & v) {
-    Vector2D v_hat{};
-    double v_norm = sqrt(v.x * v.x + v.y * v.y);
-
-    if(v_norm == 0.0)
-    {
-        std::cout << "Invalid vector" << std::endl;
-    }
-    else
-    {
-        v_hat.x = v.x / v_norm;
-        v_hat.y = v.y / v_norm;
-    }
-
-    return v_hat;
 }

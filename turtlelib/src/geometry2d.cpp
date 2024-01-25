@@ -53,4 +53,21 @@ namespace turtlelib {
         return is;
     }
 
+    Vector2D normalizeVector(const Vector2D & v) {
+    Vector2D v_hat{};
+    double v_norm = sqrt(v.x * v.x + v.y * v.y);
+
+    if(v_norm == 0.0)
+    {
+        std::cout << "Invalid vector" << std::endl;
+    }
+    else
+    {
+        v_hat.x = v.x / v_norm;
+        v_hat.y = v.y / v_norm;
+    }
+
+    return v_hat;
+}
+
 }
