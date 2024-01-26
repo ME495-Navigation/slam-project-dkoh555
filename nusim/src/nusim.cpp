@@ -11,6 +11,8 @@
 #include <map>
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2/LinearMath/Quaternion.h"
+#include "visualization_msgs/msg/marker.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 #include "std_msgs/msg/u_int64.hpp"
 #include "std_srvs/srv/empty.hpp"
@@ -39,6 +41,8 @@ public:
     x0 = declare_and_get_param<double>("x", 0.0f, *this, "Starting x coord of robot");
     y0 = declare_and_get_param<double>("y", 0.0f, *this, "Starting y coord of robot");
     theta0 = declare_and_get_param<double>("theta", 0.0f, *this, "Starting directional angle of robot");
+    arena_x_length = declare_and_get_param<double>("arena_x_length", 5.0f, *this, "x length of arena");
+    arena_y_length = declare_and_get_param<double>("arena_y_length", 5.0f, *this, "y length of arena");
 
     //
     // Additional variable initialization
@@ -50,6 +54,9 @@ public:
     //
     // Publishing the simulator's timestep count
     timestep_pub = this->create_publisher<std_msgs::msg::UInt64>("timestep", 100);
+    // Publishing the wall markers
+    rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(10)).transient_local();
+    wall_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", qos);
 
     //
     // SERVICE
@@ -80,6 +87,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_pub;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_srv;
   rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_srv;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wall_pub;
 
   //
   // Variables
@@ -87,6 +95,7 @@ private:
   size_t timestep;
   double x0, y0, theta0; // Starting pos
   double x, y, theta; // Current pos
+  double arena_x_length, arena_y_length; // World dimensions
 
   //
   // TIMER CALLBACK
@@ -103,6 +112,9 @@ private:
 
     // Transforms
     tf_world_robot(x, y, theta);
+
+    // World objects
+    wall_broadcast();
   }
 
   //
@@ -154,6 +166,54 @@ private:
 
     // Broadcast transform
     tf_broadcaster->sendTransform(msg);
+  }
+
+  // Broadcasts world's walls
+  void wall_broadcast()
+  {
+    visualization_msgs::msg::MarkerArray marker_array;
+    visualization_msgs::msg::Marker wall;
+
+    for (int i = 0; i <= 3; i++) {
+      wall.header.stamp = rclcpp::Clock().now();
+      wall.header.frame_id = "nusim/world";
+      wall.id = i;
+      wall.type = 1;
+      wall.action = 0;
+
+      wall.color.r = 1.0;
+      wall.color.g = 0.0;
+      wall.color.b = 0.0;
+      wall.color.a = 1.0;
+
+      wall.scale.x = 0.0;
+      wall.scale.y = 0.0;
+      wall.scale.z = 0.25;
+      wall.pose.position.x = 0.0;
+      wall.pose.position.y = 0.0;
+      wall.pose.position.z = 0.125;
+      marker_array.markers.push_back(wall);
+    }
+
+    const auto wall_thickness = 0.05;
+
+    marker_array.markers.at(0).scale.x = wall_thickness;
+    marker_array.markers.at(0).scale.y = arena_y_length + 2 * wall_thickness;
+    marker_array.markers.at(0).pose.position.x = 0.5 * (arena_x_length + wall_thickness);
+
+    marker_array.markers.at(1).scale.x = arena_x_length + 2 * wall_thickness;
+    marker_array.markers.at(1).scale.y = wall_thickness;
+    marker_array.markers.at(1).pose.position.y = 0.5 * (arena_y_length + wall_thickness);
+
+    marker_array.markers.at(2).scale.x = wall_thickness;
+    marker_array.markers.at(2).scale.y = arena_y_length + 2 * wall_thickness;
+    marker_array.markers.at(2).pose.position.x = -0.5 * (arena_x_length + wall_thickness);
+
+    marker_array.markers.at(3).scale.x = arena_x_length + 2 * wall_thickness;
+    marker_array.markers.at(3).scale.y = wall_thickness;
+    marker_array.markers.at(3).pose.position.y = -0.5 * (arena_y_length + wall_thickness);
+
+    wall_pub->publish(marker_array);
   }
 
   //
