@@ -32,7 +32,10 @@ public:
     // PARAMETERS
     //
     // Frequency of timer
-    auto frequency = declare_and_get_param<double>("frequency", 200.0f, *this, "Frequency node timer");
+    auto frequency = declare_and_get_param<double>("frequency", 200.0f, *this, "Frequency of node timer");
+    auto x0 = declare_and_get_param<double>("x0", 0.0f, *this, "Starting x coord of robot");
+    auto y0 = declare_and_get_param<double>("y0", 0.0f, *this, "Starting y coord of robot");
+    auto theta0 = declare_and_get_param<double>("theta0", 0.0f, *this, "Starting directional angle of robot");
 
     //
     // PUBLISHERS
@@ -61,6 +64,8 @@ private:
   //
   // Helper functions
   //
+  double x0, y0, theta0; // Starting pos
+  double x, y, theta; // Current pos
 
   //
   // Variables
@@ -83,6 +88,9 @@ private:
   void reset_callback(std::shared_ptr<std_srvs::srv::Empty::Request>, std::shared_ptr<std_srvs::srv::Empty::Response>)
   {
     timestep = 0;
+    x = x0;
+    y = y0;
+    theta = theta0;
   }
 };
 
