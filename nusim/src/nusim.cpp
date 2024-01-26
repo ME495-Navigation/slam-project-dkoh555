@@ -9,6 +9,8 @@
 #include <memory>
 #include <optional>
 #include <map>
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2/LinearMath/Quaternion.h"
 
 #include "std_msgs/msg/u_int64.hpp"
 #include "std_srvs/srv/empty.hpp"
@@ -33,10 +35,10 @@ public:
     // PARAMETERS
     //
     // Frequency of timer
-    auto frequency = declare_and_get_param<double>("frequency", 200.0f, *this, "Frequency of node timer");
-    auto x0 = declare_and_get_param<double>("x0", 0.0f, *this, "Starting x coord of robot");
-    auto y0 = declare_and_get_param<double>("y0", 0.0f, *this, "Starting y coord of robot");
-    auto theta0 = declare_and_get_param<double>("theta0", 0.0f, *this, "Starting directional angle of robot");
+    const auto frequency = declare_and_get_param<double>("frequency", 200.0f, *this, "Frequency of node timer");
+    x0 = declare_and_get_param<double>("x", 0.0f, *this, "Starting x coord of robot");
+    y0 = declare_and_get_param<double>("y", 0.0f, *this, "Starting y coord of robot");
+    theta0 = declare_and_get_param<double>("theta", 0.0f, *this, "Starting directional angle of robot");
 
     //
     // Additional variable initialization
@@ -58,6 +60,12 @@ public:
     teleport_srv = this->create_service<nusim::srv::Teleport>("~/teleport", std::bind(&nusimNode::teleport_callback, this, _1, _2));
 
     //
+    // BROADCASTER
+    //
+    // Transform
+    tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+
+    //
     // TIMER
     //
     timer_ = this->create_wall_timer(1.0s / frequency, std::bind(&nusimNode::timer_callback, this));
@@ -68,20 +76,17 @@ private:
   // Node-related Declarations
   //
   rclcpp::TimerBase::SharedPtr timer_;
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
   rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_pub;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_srv;
   rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_srv;
 
   //
-  // Helper functions
-  //
-  double x0, y0, theta0; // Starting pos
-  double x, y, theta; // Current pos
-
-  //
   // Variables
   //
   size_t timestep;
+  double x0, y0, theta0; // Starting pos
+  double x, y, theta; // Current pos
 
   //
   // TIMER CALLBACK
@@ -89,14 +94,20 @@ private:
   /// @brief Timer callback for node, reads joy_state to publish appropriate output messages
   void timer_callback()
   {
+    // Timestep
     std_msgs::msg::UInt64 new_msg;
     new_msg.data = timestep;
-    RCLCPP_INFO(rclcpp::get_logger("nusim"), "Timestep: %zu", timestep);
-    RCLCPP_INFO_STREAM(get_logger(), "Curr pos [x:" << x << " y:" << y << " theta:" << theta << "]");
+    timestep_pub->publish(new_msg);
     timestep += 1;
-    
+    RCLCPP_INFO_STREAM(get_logger(), "Curr pos [x:" << x << " y:" << y << " theta:" << theta << "]");
+
+    // Transforms
+    tf_world_robot(x, y, theta);
   }
 
+  //
+  // SERVICE CALLBACKS
+  //
   void reset_callback(std::shared_ptr<std_srvs::srv::Empty::Request>, std::shared_ptr<std_srvs::srv::Empty::Response>)
   {
     // timestep = 0;
@@ -115,6 +126,39 @@ private:
     response->success = true;
   }
 
+  //
+  // TRANSFORM RELATED
+  //
+  // Broadcasts world -> red robot transform
+  void tf_world_robot(double x_in, double y_in, double theta_in)
+  {
+    geometry_msgs::msg::TransformStamped msg;
+
+    // Key info
+    msg.header.stamp = rclcpp::Clock().now();
+    msg.header.frame_id = "nusim/world";
+    msg.child_frame_id = "red/base_footprint";
+
+    // Translation
+    msg.transform.translation.x = x_in;
+    msg.transform.translation.y = y_in;
+    msg.transform.translation.z = 0.0;
+    
+    // Rotation
+    tf2::Quaternion quat;
+    quat.setRPY(0, 0, theta_in);
+    msg.transform.rotation.x = quat.x();
+    msg.transform.rotation.y = quat.y();
+    msg.transform.rotation.z = quat.z();
+    msg.transform.rotation.w = quat.w();
+
+    // Broadcast transform
+    tf_broadcaster->sendTransform(msg);
+  }
+
+  //
+  // HELPER FUNCTIONS
+  //
   void init_var()
   {
     timestep = 0;

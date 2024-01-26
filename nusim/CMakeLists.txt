@@ -15,6 +15,8 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 ###############
 ## Interface ##
@@ -35,7 +37,7 @@ ament_export_dependencies(rclcpp geometry_msgs
   sensor_msgs std_msgs std_srvs)
 
 set(NUSIM_AMENT_TARGET_DEPENDENCIES
-  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs
+  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs tf2 tf2_ros
 )
 set(NUSIM_TARGET_LINK_LIBRARIES
   yaml-cpp
