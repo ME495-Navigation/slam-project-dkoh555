@@ -1,3 +1,29 @@
+/// @file
+/// @brief Controls the simulation of the turtlebot in rviz, including broadcasting transforms
+/// 
+/// @section Publishers
+///   ~/timestep (std_msgs/UInt64) - Current timestep in the simulation
+///
+/// @section Services
+///   ~/reset (std_msgs/Empty) - Service that resets the simulation to its initial state when triggered
+///   ~/teleport (nusim/Teleport) - A service that moves the robot to the provided coordinates
+///
+/// @section Broadcaster
+///   ~/walls (MarkerArray) - Marker array that creates the arena walls in rviz
+///   ~/obstacles (MarkerArray) - Marker array that creates the various obstacles in rviz
+///
+/// @section Parameters
+///  `~/frequency (double) [default "200.0"]`      - Frequency of node timer
+///
+///  `~/x (double) [default "0.0"]`      - Starting x coord of robot
+///  `~/y (double) [default "0.0"]`      - Starting y coord of robot
+///  `~/theta (double) [default "0.0"]`      - Starting directional angle of robot
+///  `~/arena_x_length (double) [default "5.0"]`      - x length of arena
+///  `~/arena_y_length (double) [default "5.0"]`      - y length of arena
+///  `~/obstacles/x (vector<double>) [default "{}"]`      - x coords of each obstacles
+///  `~/obstacles/y (vector<double>) [default "{}"]`      - y coords of each obstacles
+///  `~/obstacles/r (double) [default "0.75"]`      - Radius of all obstacles
+
 #include "rclcpp/rclcpp.hpp"
 #include "param_lib.cpp"
 #include <string>
@@ -45,7 +71,7 @@ public:
     arena_y_length = declare_and_get_param<double>("arena_y_length", 5.0f, *this, "y length of arena");
     obx_arr = declare_and_get_param<std::vector<double>>("obstacles/x", std::vector<double>{}, *this, "x coords of each obstacles");
     oby_arr = declare_and_get_param<std::vector<double>>("obstacles/y", std::vector<double>{}, *this, "y coords of each obstacles");
-    obr = declare_and_get_param<double>("obstacles/r", 0.75f, *this, "radius of all obstacles");
+    obr = declare_and_get_param<double>("obstacles/r", 0.75f, *this, "Radius of all obstacles");
     
     // If the x and y obstacle arrays are different size, return an error and exit
     if (obx_arr.size() != oby_arr.size())
@@ -62,7 +88,7 @@ public:
     // PUBLISHERS
     //
     // Publishing the simulator's timestep count
-    timestep_pub = this->create_publisher<std_msgs::msg::UInt64>("timestep", 100);
+    timestep_pub = this->create_publisher<std_msgs::msg::UInt64>("~/timestep", 100);
     // Publishing the wall markers
     rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(10)).transient_local();
     wall_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", qos);
@@ -253,7 +279,7 @@ private:
       obs.scale.z = 0.25;
       obs_array.markers.push_back(obs);
     }
-    
+
     obs_pub->publish(obs_array);
   }
 
