@@ -22,4 +22,4 @@ This turtlebot simulation utilizes various ROS systems, including `tf`, `markers
 # Gallery
 Screenshot of the `nusim.launch.xml` launch file being run:
 
-![Screenshot from 2024-01-26 02-06-28](https://github.com/ME495-Navigation/slam-project-dkoh555/assets/107823507/eb52db47-15f2-4cf3-a5b7-b65e1cc89394)
+![](images/nusim1.png)
