@@ -13,7 +13,19 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 find_package(yaml-cpp REQUIRED)
+
+###############
+## Interface ##
+###############
+
+rosidl_generate_interfaces(teleport_srv
+  "srv/Teleport.srv"
+  LIBRARY_NAME ${PROJECT_NAME}
+)
+rosidl_get_typesupport_target(cpp_typesupport_target
+  teleport_srv "rosidl_typesupport_cpp")
 
 ###########
 ## Build ##
@@ -29,12 +41,6 @@ set(NUSIM_TARGET_LINK_LIBRARIES
   yaml-cpp
   "${cpp_typesupport_target}"
 )
-
-# add_executable(nusim src/nusim.cpp)
-# target_include_directories(nusim PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include>)
-# target_compile_features(nusim PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 # nusim node
 add_executable(nusim src/nusim.cpp)
@@ -56,6 +62,13 @@ target_link_libraries(nusim
 
 install(TARGETS nusim
   DESTINATION lib/${PROJECT_NAME})
+
+install(DIRECTORY
+  # launch
+  srv
+  # config
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
