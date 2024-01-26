@@ -9,6 +9,8 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -17,10 +19,11 @@ find_package(yaml-cpp REQUIRED)
 ## Build ##
 ###########
 
-ament_export_dependencies(rclcpp geometry_msgs sensor_msgs)
+ament_export_dependencies(rclcpp geometry_msgs
+  sensor_msgs std_msgs std_srvs)
 
 set(NUSIM_AMENT_TARGET_DEPENDENCIES
-  rclcpp geometry_msgs sensor_msgs
+  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs
 )
 set(NUSIM_TARGET_LINK_LIBRARIES
   yaml-cpp

@@ -10,11 +10,15 @@
 #include <optional>
 #include <map>
 
+#include "std_msgs/msg/u_int64.hpp"
+#include "std_srvs/srv/empty.hpp"
+
 using std::string;
 
 using namespace std::chrono_literals;
 using namespace rosnu;
 using std::placeholders::_1;
+using std::placeholders::_2;
 
 class nusimNode : public rclcpp::Node
 {
@@ -22,7 +26,7 @@ public:
   //
   // CONSTRUCTOR
   //
-  nusimNode() : Node("nusim")
+  nusimNode() : Node("nusim"), timestep(0)
   {
     //
     // PARAMETERS
@@ -31,13 +35,37 @@ public:
     auto frequency = declare_and_get_param<double>("frequency", 200.0f, *this, "Frequency node timer");
 
     //
+    // PUBLISHERS
+    //
+    timestep_pub = this->create_publisher<std_msgs::msg::UInt64>("timestep", 100);
+
+    //
+    // SERVICE
+    //
+    reset_srv = this->create_service<std_srvs::srv::Empty>("~/reset", std::bind(&nusimNode::reset_callback, this, _1, _2));
+
+    //
     // TIMER
     //
     timer_ = this->create_wall_timer(1.0s / frequency, std::bind(&nusimNode::timer_callback, this));
   }
 
 private:
+  //
+  // Node-related Declarations
+  //
   rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_pub;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_srv;
+
+  //
+  // Helper functions
+  //
+
+  //
+  // Variables
+  //
+  size_t timestep;
 
   //
   // TIMER CALLBACK
@@ -45,7 +73,16 @@ private:
   /// @brief Timer callback for node, reads joy_state to publish appropriate output messages
   void timer_callback()
   {
-    RCLCPP_INFO(rclcpp::get_logger("nusim"), "TESTING");
+    std_msgs::msg::UInt64 new_msg;
+    new_msg.data = timestep;
+    RCLCPP_INFO(rclcpp::get_logger("nusim"), "Timestep: %zu", timestep);
+    timestep += 1;
+    
+  }
+
+  void reset_callback(std::shared_ptr<std_srvs::srv::Empty::Request>, std::shared_ptr<std_srvs::srv::Empty::Response>)
+  {
+    timestep = 0;
   }
 };
 
