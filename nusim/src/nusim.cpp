@@ -43,6 +43,15 @@ public:
     theta0 = declare_and_get_param<double>("theta", 0.0f, *this, "Starting directional angle of robot");
     arena_x_length = declare_and_get_param<double>("arena_x_length", 5.0f, *this, "x length of arena");
     arena_y_length = declare_and_get_param<double>("arena_y_length", 5.0f, *this, "y length of arena");
+    obx_arr = declare_and_get_param<std::vector<double>>("obstacles/x", std::vector<double>{}, *this, "x coords of each obstacles");
+    oby_arr = declare_and_get_param<std::vector<double>>("obstacles/y", std::vector<double>{}, *this, "y coords of each obstacles");
+    obr = declare_and_get_param<double>("obstacles/r", 0.75f, *this, "radius of all obstacles");
+    
+    // If the x and y obstacle arrays are different size, return an error and exit
+    if (obx_arr.size() != oby_arr.size())
+    {
+      throw std::runtime_error("Mismatching obstacles/x and obstacles/y array sizes");
+    }
 
     //
     // Additional variable initialization
@@ -57,6 +66,7 @@ public:
     // Publishing the wall markers
     rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(10)).transient_local();
     wall_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", qos);
+    obs_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/obstacles", qos);
 
     //
     // SERVICE
@@ -88,6 +98,7 @@ private:
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_srv;
   rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_srv;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wall_pub;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obs_pub;
 
   //
   // Variables
@@ -96,6 +107,8 @@ private:
   double x0, y0, theta0; // Starting pos
   double x, y, theta; // Current pos
   double arena_x_length, arena_y_length; // World dimensions
+  std::vector<double> obx_arr, oby_arr; // Obstacle coords
+  double obr;
 
   //
   // TIMER CALLBACK
@@ -108,13 +121,13 @@ private:
     new_msg.data = timestep;
     timestep_pub->publish(new_msg);
     timestep += 1;
-    RCLCPP_INFO_STREAM(get_logger(), "Curr pos [x:" << x << " y:" << y << " theta:" << theta << "]");
 
     // Transforms
     tf_world_robot(x, y, theta);
 
     // World objects
     wall_broadcast();
+    obstacle_broadcast();
   }
 
   //
@@ -214,6 +227,34 @@ private:
     marker_array.markers.at(3).pose.position.y = -0.5 * (arena_y_length + wall_thickness);
 
     wall_pub->publish(marker_array);
+  }
+
+  void obstacle_broadcast()
+  {
+    visualization_msgs::msg::MarkerArray obs_array;
+    for (size_t i = 0; i < obx_arr.size(); i++) {
+      visualization_msgs::msg::Marker obs;
+      obs.header.stamp = rclcpp::Clock().now();
+      obs.header.frame_id = "nusim/world";
+      obs.id = i;
+      obs.type = 3;
+      obs.action = 0;
+
+      obs.color.r = 1.0;
+      obs.color.g = 0.0;
+      obs.color.b = 0.0;
+      obs.color.a = 1.0;
+
+      obs.pose.position.x = this->obx_arr[i];
+      obs.pose.position.y = this->oby_arr[i];
+      obs.pose.position.z = 0.125;
+      obs.scale.x = this->obr * 2;
+      obs.scale.y = this->obr * 2;
+      obs.scale.z = 0.25;
+      obs_array.markers.push_back(obs);
+    }
+    
+    obs_pub->publish(obs_array);
   }
 
   //

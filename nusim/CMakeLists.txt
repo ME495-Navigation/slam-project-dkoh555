@@ -67,9 +67,9 @@ install(TARGETS nusim
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY
-  # launch
+  launch
   srv
-  # config
+  config
   DESTINATION share/${PROJECT_NAME}/
 )
 
