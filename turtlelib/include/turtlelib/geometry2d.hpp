@@ -91,7 +91,40 @@ namespace turtlelib
 
         /// \brief the y coordinate
         double y = 0.0;
+
+        /// \brief Adds a vector to the current vector object in question
+        /// \param addition vector to be added
+        /// \return a reference to the newly modified vector
+        Vector2D & operator+=(const Vector2D & addition);
+
+        /// \brief Subtracts a vector from the current vector object in question
+        /// \param subtractor vector to be added
+        /// \return a reference to the newly modified vector
+        Vector2D & operator-=(const Vector2D & subtractor);
+
+        /// \brief Multiplies a vector to the current vector object in question by scalar
+        /// \param multiplier vector to be added
+        /// \return a reference to the newly modified vector
+        Vector2D & operator*=(const Vector2D & multiplier);
     };
+
+    /// \brief Adding one vector to another to get a vector
+    /// \param v1 First (left hand side) vector
+    /// \param v2 Second (right hand side) vector
+    /// \return a vector that results from adding two vectors
+    Vector2D operator+(const Vector2D & v1, const Vector2D & v2);
+
+    /// \brief Subtracting one vector from another to get a vector
+    /// \param v1 First (left hand side) vector
+    /// \param v2 Second (right hand side) vector
+    /// \return a vector that results from subtracting two vectors
+    Vector2D operator-(const Vector2D & v1, const Vector2D & v2);
+
+    /// \brief Subtracting one vector from another to get a vector
+    /// \param v1 First (left hand side) vector
+    /// \param v2 Second (right hand side) vector
+    /// \return a vector that results from subtracting two vectors
+    Vector2D operator*(const Vector2D & v1, const Vector2D & v2);
 
     /// \brief Subtracting one point from another yields a vector
     /// \param head point corresponding to the head of the vector
