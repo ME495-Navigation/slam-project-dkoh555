@@ -63,6 +63,18 @@ namespace turtlelib {
         return *this;
     }
 
+    double dot(const Vector2D & v1, const Vector2D & v2) {
+        return (v1.x * v2.x + v1.y * v2.y);
+    }
+
+    double magnitude(const Vector2D & vector) {
+        return sqrt(vector.x * vector.x + vector.y * vector.y);
+    }
+
+    double angle(const Vector2D & v1, const Vector2D & v2) {
+        return atan2(v2.x - v1.x, v2.y - v1.y);
+    }
+
     Vector2D operator-(const Point2D & head, const Point2D & tail) {
         Vector2D vect;
         vect.x = head.x - tail.x;

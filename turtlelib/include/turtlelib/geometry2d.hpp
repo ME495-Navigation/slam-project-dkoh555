@@ -126,6 +126,23 @@ namespace turtlelib
     /// \return a vector that results from subtracting two vectors
     Vector2D operator*(const Vector2D & v1, const Vector2D & v2);
 
+    /// \brief Calculates the dot product of two vectors
+    /// \param v1 First (left hand side) vector
+    /// \param v2 Second (right hand side) vector
+    /// \return the dot product of both vectors
+    double dot(const Vector2D & v1, const Vector2D & v2);
+
+    /// \brief Calculates the magnitude of the vector
+    /// \param vector 2D vector in question
+    /// \return the magnitude of the vector
+    double magnitude(const Vector2D & vector);
+
+    /// \brief Calculates the angle between two vectors
+    /// \param v1 First (left hand side) vector
+    /// \param v2 Second (right hand side) vector
+    /// \return the angle between both vectors
+    double angle(const Vector2D & v1, const Vector2D & v2);
+
     /// \brief Subtracting one point from another yields a vector
     /// \param head point corresponding to the head of the vector
     /// \param tail point corresponding to the tail of the vector
