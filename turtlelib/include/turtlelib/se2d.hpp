@@ -123,7 +123,10 @@ namespace turtlelib
     /// HINT: This function should be implemented in terms of *=
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs);
 
-
+    /// \brief the trasformation corresponding to a rigid body
+    /// \param twist - the left hand operand
+    /// \return the composition of the two transforms
+    Transform2D integrate_twist(Twist2D twist);
 }
 
 #endif

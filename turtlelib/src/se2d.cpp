@@ -118,4 +118,20 @@ namespace turtlelib {
         return lhs;
     }
 
+    Transform2D integrate_twist(Twist2D twist)
+    {
+        if(twist.omega == 0.0)
+        {
+            return Transform2D(Vector2D{twist.x, twist.y}, 0.0);
+        }
+        else
+        {
+            double xs = twist.y/twist.omega;
+            double ys = -twist.x/twist.omega;
+            Transform2D T_sb = Transform2D(Vector2D{xs, ys});
+            Transform2D T_ssp = Transform2D(twist.omega);
+            Transform2D T_bs = T_sb.inv();
+            return (T_bs * T_ssp) * T_sb;
+        }
+    }
 }
