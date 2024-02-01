@@ -195,4 +195,66 @@ namespace turtlelib {
         REQUIRE_THAT(normalize_angle(3.0*PI/2.0), Catch::Matchers::WithinAbs(-PI/2.0,1.0e-6));
         REQUIRE_THAT(normalize_angle(-5.0*PI/2.0), Catch::Matchers::WithinAbs(-PI/2.0,1.0e-6));
     }
+
+    TEST_CASE( "add_vectors", "geometry2d" ) 
+    {
+        Vector2D v1, v2;
+        v1.x = 0.0;
+        v1.y = 1.0;
+        v2.x = 1.0;
+        v2.y = 0.0;
+        Vector2D v_test = v1 + v2;
+        REQUIRE(v_test.x == 1.0);
+        REQUIRE(v_test.y == 1.0);
+        v_test += v1;
+        REQUIRE(v_test.x == 1.0);
+        REQUIRE(v_test.y == 2.0);
+    }
+
+    TEST_CASE( "subtract_vectors", "geometry2d" ) 
+    {
+        Vector2D v1, v2;
+        v1.x = 10.0;
+        v1.y = 10.0;
+        v2.x = 1.0;
+        v2.y = 2.0;
+        Vector2D v_test = v1 - v2;
+        REQUIRE(v_test.x == 9.0);
+        REQUIRE(v_test.y == 8.0);
+        v_test -= v1;
+        REQUIRE(v_test.x == -1.0);
+        REQUIRE(v_test.y == -2.0);
+    }
+
+    TEST_CASE( "multiply_vectors", "geometry2d" ) 
+    {
+        Vector2D v1, v2;
+        v1.x = 10.0;
+        v1.y = 10.0;
+        v2.x = 1.0;
+        v2.y = 2.0;
+        Vector2D v_test = v1 * v2;
+        REQUIRE(v_test.x == 10.0);
+        REQUIRE(v_test.y == 20.0);
+        v_test *= v1;
+        REQUIRE(v_test.x == 100.0);
+        REQUIRE(v_test.y == 200.0);
+    }
+
+    TEST_CASE( "fancy_vector_operations", "geometry2d" ) 
+    {
+        Vector2D v1, v2;
+        v1.x = 10.0;
+        v1.y = 10.0;
+        v2.x = 1.0;
+        v2.y = 2.0;
+        double val_test = dot(v1, v2);
+        REQUIRE(val_test == 30.0);
+        v2.x = 0.0;
+        val_test = magnitude(v2);
+        REQUIRE(val_test == 2.0);
+        v2.x = -2.0;
+        val_test = angle(v1, v2);
+        REQUIRE(val_test == 90.0);
+    }
 }

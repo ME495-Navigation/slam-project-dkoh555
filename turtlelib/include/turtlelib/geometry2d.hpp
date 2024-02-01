@@ -140,7 +140,7 @@ namespace turtlelib
     /// \brief Calculates the angle between two vectors
     /// \param v1 First (left hand side) vector
     /// \param v2 Second (right hand side) vector
-    /// \return the angle between both vectors
+    /// \return the angle (degree) between both vectors
     double angle(const Vector2D & v1, const Vector2D & v2);
 
     /// \brief Subtracting one point from another yields a vector

@@ -45,8 +45,8 @@ namespace turtlelib {
     }
 
     Vector2D & Vector2D::operator-=(const Vector2D & subtractor) {
-        x = x + subtractor.x;
-        y = y + subtractor.y;
+        x = x - subtractor.x;
+        y = y - subtractor.y;
         return *this;
     }
 
@@ -72,7 +72,10 @@ namespace turtlelib {
     }
 
     double angle(const Vector2D & v1, const Vector2D & v2) {
-        return atan2(v2.x - v1.x, v2.y - v1.y);
+        double d = dot(v1, v2);
+        double det = v1.x * v2.y - v2.x * v1.y;
+        
+        return rad2deg(atan2(det, d));
     }
 
     Vector2D operator-(const Point2D & head, const Point2D & tail) {
