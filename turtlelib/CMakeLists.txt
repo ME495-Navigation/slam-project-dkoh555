@@ -5,7 +5,7 @@ project(turtlelib)
 
 # Create a library
 add_library(${PROJECT_NAME} src/geometry2d.cpp src/se2d.cpp
-            src/svg.cpp src/frame_main.cpp)
+            src/svg.cpp)
 
 # Enable C++17 support
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
