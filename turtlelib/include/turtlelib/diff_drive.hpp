@@ -14,11 +14,11 @@ namespace turtlelib
     /// \brief represent the positions of a robot's wheels
     struct WheelPosition
     {
-        /// \brief the left wheel position
-        double left = 0.0;
-
         /// \brief the right wheel position
         double right = 0.0;
+
+        /// \brief the left wheel position
+        double left = 0.0;
     };
 
     /// \brief a rigid body transformation in 2 dimensions
@@ -31,7 +31,7 @@ namespace turtlelib
             double track_width;
             /// \brief the robot's position configuration
             Transform2D robot_position;
-            /// @brief the robot's wheel positions {right, left}
+            /// @brief the robot's wheel positions in radians {right, left}
             WheelPosition wheel_positions;
         
         public:
@@ -59,7 +59,9 @@ namespace turtlelib
             /// \brief Return the robot's current wheel positions
             WheelPosition get_wheels() const;
 
-            // void forward_k(WheelPosition new_positions);
+            /// \brief Updates robot's position and wheel configuration based on new wheel positions
+            /// \param new_positions - robot's new wheel positions (radians)
+            void forward_k(WheelPosition new_positions);
 
             // void inverse_k(Twist2D velocity);
     };
