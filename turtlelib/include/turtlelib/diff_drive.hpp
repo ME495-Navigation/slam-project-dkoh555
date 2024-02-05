@@ -63,11 +63,18 @@ namespace turtlelib
             /// \brief Return the robot's current wheel positions
             WheelPosition get_wheels() const;
 
+            // Helper Functions
+            /// \brief Normalizes the angle values of the robot's wheel positions and body rotation
+            void normalize_robot_angles();
+
+            // Functions
             /// \brief Updates robot's position and wheel configuration based on new wheel positions
             /// \param new_positions - robot's new wheel positions (radians)
             void forward_k(WheelPosition position_change);
 
-            // void inverse_k(Twist2D velocity);
+            // /// \brief Returns the wheel position change required to attain a provided twist
+            // /// \param twist - robot's linear and angular velocities
+            // WheelPosition inverse_k(Twist2D twist);
     };
 }
 

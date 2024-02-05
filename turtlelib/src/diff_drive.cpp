@@ -17,7 +17,8 @@ namespace turtlelib {
 
     DiffDrive::DiffDrive(double wheel_radius, double track_width,
                 Transform2D robot_position, WheelPosition wheel_positions) : 
-        wheel_radius(wheel_radius), track_width(track_width), robot_position(robot_position),
+        wheel_radius(wheel_radius), track_width(track_width),
+        robot_position{Vector2D{robot_position.translation().x, robot_position.translation().y}, normalize_angle(robot_position.rotation())},
         wheel_positions(WheelPosition{normalize_angle(wheel_positions.right), normalize_angle(wheel_positions.left)}) {
     }
 
@@ -28,6 +29,14 @@ namespace turtlelib {
 
     WheelPosition DiffDrive::get_wheels() const {
         return wheel_positions;
+    }
+
+    // DiffDrive helper functions
+    void DiffDrive::normalize_robot_angles() {
+        wheel_positions.right = normalize_angle(wheel_positions.right);
+        wheel_positions.left = normalize_angle(wheel_positions.left);
+        Transform2D normalized_robot_position{robot_position.translation(),
+                                                normalize_angle(robot_position.rotation())};
     }
 
     // DiffDrive functions
@@ -49,15 +58,13 @@ namespace turtlelib {
         Transform2D final_transform = robot_position * curr_transform;
 
         // Apply the change to the current robot configuration
-
-        // Vector2D new_position = robot_position.translation() + curr_transform.translation();
-        // double new_rotation = normalize_angle(robot_position.rotation() + curr_transform.rotation());
-        // Transform2D combined_transform{new_position, new_rotation};
-
         robot_position = final_transform;
 
-        // Update the wheel positions of the robot (should be normalized)
-        wheel_positions.right = normalize_angle(wheel_positions.right + position_change.right);
-        wheel_positions.left = normalize_angle(wheel_positions.left + position_change.left);
+        // Update the wheel positions of the robot
+        wheel_positions.right = wheel_positions.right + position_change.right;
+        wheel_positions.left = wheel_positions.left + position_change.left;
+
+        // Normalize the wheel and body rotation angles of the robot
+        normalize_robot_angles();
     }
 }
