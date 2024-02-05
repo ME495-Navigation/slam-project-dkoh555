@@ -17,8 +17,8 @@ namespace turtlelib {
 
     DiffDrive::DiffDrive(double wheel_radius, double track_width,
                 Transform2D robot_position, WheelPosition wheel_positions) : 
-        wheel_radius(wheel_radius), track_width(track_width),
-        robot_position(robot_position), wheel_positions(wheel_positions) {
+        wheel_radius(wheel_radius), track_width(track_width), robot_position(robot_position),
+        wheel_positions(WheelPosition{normalize_angle(wheel_positions.right), normalize_angle(wheel_positions.left)}) {
     }
 
     // DiffDrive Getter functions
@@ -31,28 +31,33 @@ namespace turtlelib {
     }
 
     // DiffDrive functions
-    void DiffDrive::forward_k(WheelPosition new_positions) {
-        // Note the change in wheel position
-        WheelPosition delta_wheel{new_positions.right -wheel_positions.right,
-            new_positions.left -wheel_positions.left};
-
+    void DiffDrive::forward_k(WheelPosition position_change) {
         // Calculte the x velocity
-        double x_vel = (delta_wheel.right + delta_wheel.left) * wheel_radius / 2;
+        double x_vel = (position_change.right + position_change.left) * wheel_radius / 2;
 
         // The y velocity is always 0
         double y_vel = 0.0;
 
         // Calculate the angular velocity
-        double omega_vel = (delta_wheel.right - delta_wheel.left) * wheel_radius / track_width;
+        double omega_vel = (position_change.right - position_change.left) * wheel_radius / track_width;
 
         // Using the resulting twist, find the change in position
-        Twist2D new_twist{omega_vel, x_vel, y_vel};
-        Transform2D new_transform = integrate_twist(new_twist);
+        Twist2D curr_twist{omega_vel, x_vel, y_vel};
+        Transform2D curr_transform = integrate_twist(curr_twist);
+
+        // Combine the wb and bbnew transforms
+        Transform2D final_transform = robot_position * curr_transform;
 
         // Apply the change to the current robot configuration
-        Vector2D new_position = robot_position.translation() + new_transform.translation();
-        double new_rotation = robot_position.rotation() + new_transform.rotation();
-        Transform2D combined_transform{new_position, new_rotation};
-        robot_position = combined_transform;
+
+        // Vector2D new_position = robot_position.translation() + curr_transform.translation();
+        // double new_rotation = normalize_angle(robot_position.rotation() + curr_transform.rotation());
+        // Transform2D combined_transform{new_position, new_rotation};
+
+        robot_position = final_transform;
+
+        // Update the wheel positions of the robot (should be normalized)
+        wheel_positions.right = normalize_angle(wheel_positions.right + position_change.right);
+        wheel_positions.left = normalize_angle(wheel_positions.left + position_change.left);
     }
 }

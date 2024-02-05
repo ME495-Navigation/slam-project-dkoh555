@@ -73,6 +73,12 @@ target_link_libraries(test_svg ${PROJECT_NAME} Catch2::Catch2WithMain)
 # register the test with CTest, telling it what executable to run
 add_test(NAME Testing_svg COMMAND test_svg)
 
+# Test for diff_drive.cpp
+add_executable(test_diff_drive tests/test_diff_drive.cpp)
+target_link_libraries(test_diff_drive ${PROJECT_NAME} Catch2::Catch2WithMain)
+# register the test with CTest, telling it what executable to run
+add_test(NAME Testing_diff_drive COMMAND test_diff_drive)
+
 ###
 ### Do I need... any of the below stuff?
 ###
