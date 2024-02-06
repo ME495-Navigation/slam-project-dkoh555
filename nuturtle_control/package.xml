@@ -23,6 +23,8 @@
 
   <depend>nuturtlebot_msgs</depend>
 
+  <depend>turtlelib</depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

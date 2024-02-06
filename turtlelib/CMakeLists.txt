@@ -79,6 +79,19 @@ target_link_libraries(test_diff_drive ${PROJECT_NAME} Catch2::Catch2WithMain)
 # register the test with CTest, telling it what executable to run
 add_test(NAME Testing_diff_drive COMMAND test_diff_drive)
 
+#####################
+## Install Library ##
+#####################
+
+# install the include directories
+install(DIRECTORY include/turtlelib
+        DESTINATION include)
+
+install(EXPORT turtlelib-targets
+        FILE turtlelib-config.cmake
+        NAMESPACE turtlelib::
+        DESTINATION lib/cmake/${PROJECT_NAME})
+
 ###
 ### Do I need... any of the below stuff?
 ###

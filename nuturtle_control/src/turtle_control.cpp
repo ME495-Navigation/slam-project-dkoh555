@@ -14,9 +14,13 @@
 #include "nuturtlebot_msgs/msg/sensor_data.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 
+#include "turtlelib/diff_drive.hpp"
+
 using std::string;
 
 using namespace std::chrono_literals;
+using namespace turtlelib;
+
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -85,6 +89,11 @@ class TurtleControlNode : public rclcpp::Node
     double frequency;
 
     //
+    // Variables
+    //
+    DiffDrive turtlebot;
+
+    //
     // TIMER CALLBACK
     //
     /// @brief Timer callback for node, reads joy_state to publish appropriate output messages
@@ -100,7 +109,7 @@ class TurtleControlNode : public rclcpp::Node
     /// @param msg - 
     void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
     {
-
+      
     }
 
     /// @brief 
@@ -116,7 +125,8 @@ class TurtleControlNode : public rclcpp::Node
     //
     void init_var()
     {
-
+      // Initialize the diff drive robot
+      turtlebot = DiffDrive();
     }
 
 };
