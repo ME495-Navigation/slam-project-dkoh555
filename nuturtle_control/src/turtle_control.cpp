@@ -30,7 +30,8 @@ class TurtleControlNode : public rclcpp::Node
     //
     // CONSTRUCTOR
     //
-    TurtleControlNode() : Node("turtle_control")
+    TurtleControlNode() : Node("turtle_control"),
+                          fresh_cmd_vel_received(false)
     {
       //
       // PARAMETERS
@@ -87,11 +88,13 @@ class TurtleControlNode : public rclcpp::Node
     // Variables
     //
     double frequency;
+    double fresh_cmd_vel_received;
 
     //
-    // Variables
+    // Objects
     //
     DiffDrive turtlebot;
+    geometry_msgs::msg::Twist received_twist;
 
     //
     // TIMER CALLBACK
@@ -99,7 +102,39 @@ class TurtleControlNode : public rclcpp::Node
     /// @brief Timer callback for node, reads joy_state to publish appropriate output messages
     void timer_callback()
     {
+      if(fresh_cmd_vel_received)
+      {
+        // Placing the cmd_vel publishing code in the timer so that it's easier to control
+        // its rate of publishing and therefore the rate in which the turtlebot motors receive commands
 
+        // Convert the Twist message to turtlelib's Twist2D message
+        Twist2D converted_twist{received_twist.angular.z, received_twist.linear.x, received_twist.linear.y};
+
+        // Use the Twist2D message to for inverse kinematics to calculate how much the wheels have rotated
+        WheelPosition wheels_delta = turtlebot.inverse_k(converted_twist);
+
+        // Use the calculated WheelPosition for forward kinematics to find and update the changes in the robot's configuration
+        // (Including wheel angles, and position of the robot)
+        turtlebot.forward_k(wheels_delta);
+
+        // Adjust the found WheelPosition so that it is suitable to be sent to the turtlebot motors
+        float raw_left_vel, raw_right_vel;    // Left and right wheel velocity, in "motor command units" (mcu)
+                                              // For the turtlebot, each motor can be command with an integer velocity of between
+                                              // -265 mcu and 265 mcu, and 1 mcu = 0.024 rad/sec
+        raw_left_vel = wheels_delta.left / 0.024;
+        raw_right_vel = wheels_delta.right / 0.024;
+
+        // Convert the raw velocities to integers so that it's compatible with MCU ticks
+        int mcu_left_vel = static_cast<int>(std::round(raw_left_vel));
+        int mcu_right_vel = static_cast<int>(std::round(raw_right_vel));
+
+        // Use these MCU velocities for a WheelCommands message and publish it
+        nuturtlebot_msgs::msg::WheelCommands wheel_command;
+        wheel_command.left_velocity = mcu_left_vel;
+        wheel_command.right_velocity = mcu_right_vel;
+        wheel_cmd_pub->publish(wheel_command);
+
+      }
     }
 
     //
@@ -109,7 +144,9 @@ class TurtleControlNode : public rclcpp::Node
     /// @param msg - 
     void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
     {
-      
+      // Note the received Twist message
+      received_twist = *msg;
+      fresh_cmd_vel_received = true;
     }
 
     /// @brief 
