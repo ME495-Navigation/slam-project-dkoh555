@@ -67,4 +67,18 @@ namespace turtlelib {
         // Normalize the wheel and body rotation angles of the robot
         normalize_robot_angles();
     }
+
+    WheelPosition DiffDrive::inverse_k(Twist2D twist) {
+        // If the y component of twist is non-zero, throw an error
+        if (twist.y != 0.0)
+        {
+            throw std::logic_error("Non-zero y component in twist implies robot slipping.");
+        }
+
+        // Calculate the change in wheel positions required to achieve the input twist
+        double right_change = (1/wheel_radius) * (twist.x - ((track_width * twist.omega)/2));
+        double left_change = (1/wheel_radius) * (twist.x + ((track_width * twist.omega)/2));
+
+        return WheelPosition{right_change, left_change};
+    }
 }

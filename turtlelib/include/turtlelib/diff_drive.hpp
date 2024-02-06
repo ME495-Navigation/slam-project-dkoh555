@@ -11,7 +11,7 @@
 
 namespace turtlelib
 {
-    /// \brief represent the positions of a robot's wheels (normalized to (-PI, PI])
+    /// \brief represent the positions of set of wheels
     struct WheelPosition
     {
         /// \brief the right wheel position
@@ -72,9 +72,9 @@ namespace turtlelib
             /// \param new_positions - robot's new wheel positions (radians)
             void forward_k(WheelPosition position_change);
 
-            // /// \brief Returns the wheel position change required to attain a provided twist
-            // /// \param twist - robot's linear and angular velocities
-            // WheelPosition inverse_k(Twist2D twist);
+            /// \brief Returns the wheel position change required to attain a provided twist
+            /// \param twist - robot's linear and angular velocities
+            WheelPosition inverse_k(Twist2D twist);
     };
 }
 

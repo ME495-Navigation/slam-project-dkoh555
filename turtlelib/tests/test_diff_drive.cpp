@@ -72,4 +72,46 @@ namespace turtlelib {
         REQUIRE_THAT(robot4.get_position().translation().x, WithinAbs(16.0050106563,TOLERANCE));
         REQUIRE_THAT(robot4.get_position().translation().y, WithinAbs(-1.2146835484,TOLERANCE));
     }
+
+    TEST_CASE("inverse_kinematics", "diff_drive")
+    {
+        // Pure linear motion
+        DiffDrive robot0{10.2, 112.3};
+        WheelPosition wheel_motion0 = robot0.inverse_k(Twist2D{0.0, 3.5, 0.0});
+
+        REQUIRE_THAT(wheel_motion0.left, WithinAbs(3.5 / 10.2, TOLERANCE));
+        REQUIRE_THAT(wheel_motion0.right, WithinAbs(3.5 / 10.2, TOLERANCE));
+
+        DiffDrive robot1{10.2, 112.3};
+        WheelPosition wheel_motion1 = robot1.inverse_k(Twist2D{0.0, -1034.4, 0.0});
+
+        REQUIRE_THAT(wheel_motion1.right, WithinAbs(-1034.4 / 10.2, TOLERANCE));
+        REQUIRE_THAT(wheel_motion1.left, WithinAbs(-1034.4 / 10.2, TOLERANCE));
+
+        // Pure rotation
+        DiffDrive robot2{3.2, 12.34};
+        WheelPosition wheel_motion2 = robot2.inverse_k(Twist2D{PI, 0.0, 0.0});
+
+        REQUIRE_THAT(wheel_motion2.left, WithinAbs(PI * (12.34 / 2.0) / 3.2, TOLERANCE));
+        REQUIRE_THAT(wheel_motion2.right, WithinAbs(-PI * (12.34 / 2.0) / 3.2, TOLERANCE));
+
+        DiffDrive robot3{3.2, 12.34};
+        WheelPosition wheel_motion3 = robot3.inverse_k(Twist2D{-PI, 0.0, 0.0});
+
+        REQUIRE_THAT(wheel_motion3.left, WithinAbs(-PI * (12.34 / 2.0) / 3.2, TOLERANCE));
+        REQUIRE_THAT(wheel_motion3.right, WithinAbs(PI * (12.34 / 2.0) / 3.2, TOLERANCE));
+
+        // Circular arc
+        DiffDrive robot4{0.023, 0.88234};
+        WheelPosition wheel_motion4 = robot4.inverse_k(Twist2D{PI, PI * 0.88234 / 2.0, 0.0});
+
+        REQUIRE_THAT(wheel_motion4.right, WithinAbs(0.0, TOLERANCE));
+        REQUIRE_THAT(wheel_motion4.left, WithinAbs(PI * 0.88234 / 0.023, TOLERANCE));
+
+        // Random arc
+        DiffDrive robot5{0.023, 0.88234};
+
+        REQUIRE_THROWS_AS(robot5.inverse_k(Twist2D{0.0, 0.0, 1.0}), std::logic_error);
+        REQUIRE_THROWS_AS(robot5.inverse_k(Twist2D{PI, 10000.0, 0.5}), std::logic_error);
+    }
 }
