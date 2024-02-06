@@ -10,6 +10,9 @@
 #include <map>
 
 #include "geometry_msgs/msg/twist.hpp"
+#include "nuturtlebot_msgs/msg/wheel_commands.hpp"
+#include "nuturtlebot_msgs/msg/sensor_data.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 
 using std::string;
 
@@ -40,9 +43,17 @@ class TurtleControlNode : public rclcpp::Node
       init_var();
 
       //
+      // SUBSCRIBERS
+      //
+      cmd_vel_sub = create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, std::bind(&TurtleControlNode::cmd_vel_callback, this, _1));
+      sensor_data_sub = create_subscription<nuturtlebot_msgs::msg::SensorData>("sensor_data", 10, std::bind(&TurtleControlNode::sensor_data_callback, this, _1));
+
+
+      //
       // PUBLISHERS
       //
-      cmd_vel_pub = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 100);
+      wheel_cmd_pub = create_publisher<nuturtlebot_msgs::msg::WheelCommands>("wheel_cmd", 100);
+      joint_states_pub = create_publisher<sensor_msgs::msg::JointState>("joint_states", 100);
 
       //
       // SERVICE
@@ -63,7 +74,10 @@ class TurtleControlNode : public rclcpp::Node
     // Node-related Declarations
     //
     rclcpp::TimerBase::SharedPtr timer;
-    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub;
+    rclcpp::Subscription<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_data_sub;
+    rclcpp::Publisher<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr wheel_cmd_pub;
+    rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_states_pub;
 
     //
     // Variables
@@ -78,6 +92,24 @@ class TurtleControlNode : public rclcpp::Node
     {
 
     }
+
+    //
+    // NODE CALLBACKS
+    //
+    /// @brief 
+    /// @param msg - 
+    void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
+    {
+
+    }
+
+    /// @brief 
+    /// @param msg - 
+    void sensor_data_callback(const nuturtlebot_msgs::msg::SensorData::SharedPtr msg)
+    {
+
+    }
+
 
     //
     // HELPER FUNCTIONS
