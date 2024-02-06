@@ -31,7 +31,8 @@ class TurtleControlNode : public rclcpp::Node
     // CONSTRUCTOR
     //
     TurtleControlNode() : Node("turtle_control"),
-                          fresh_cmd_vel_received(false)
+                          fresh_cmd_vel_received(false),
+                          fresh_sensor_data_received(false)
     {
       //
       // PARAMETERS
@@ -88,13 +89,16 @@ class TurtleControlNode : public rclcpp::Node
     // Variables
     //
     double frequency;
-    double fresh_cmd_vel_received;
+    bool fresh_cmd_vel_received, fresh_sensor_data_received;
 
     //
     // Objects
     //
     DiffDrive turtlebot;
     geometry_msgs::msg::Twist received_twist;
+    nuturtlebot_msgs::msg::SensorData received_sensordata;
+    sensor_msgs::msg::JointState prev_joint_states;
+    double curr_sensor_time, prev_sensor_time;
 
     //
     // TIMER CALLBACK
@@ -153,6 +157,61 @@ class TurtleControlNode : public rclcpp::Node
     /// @param msg - 
     void sensor_data_callback(const nuturtlebot_msgs::msg::SensorData::SharedPtr msg)
     {
+      // Note the received SensorData message
+      received_sensordata = *msg;
+
+      // Placing the joint_states publishing code in the sensor_data_callback so that it publishes
+      // the most up-to-date JointStates as soon as any SensorData is received
+
+      // Note the time the SensorData message is received
+      curr_sensor_time = received_sensordata.stamp.sec + received_sensordata.stamp.nanosec * 1e-9;
+
+      // Extract the useful data from the received SensorData message
+      int left_encoder = received_sensordata.left_encoder;
+      int right_encoder = received_sensordata.right_encoder;
+
+      // Convert encoder readings into angle radians wrapped to (-PI, PI]
+      double left_angle = ticks_to_rad(left_encoder);
+      double right_angle = ticks_to_rad(right_encoder);
+
+      // Fill the JointStates message with the relevant information
+      sensor_msgs::msg::JointState robot_joint_states;
+      robot_joint_states.header.stamp = received_sensordata.stamp;
+      robot_joint_states.name = {"wheel_left_joint", "wheel_right_joint"};
+
+      // Fill in position information
+      robot_joint_states.position = {left_angle, right_angle};
+
+      // Fill in velocity information
+      // If this is the first SensorData message received, initialize the velocity as zeros
+      if(!fresh_sensor_data_received)
+      {
+        // Velocities set to 0
+        robot_joint_states.velocity = {};
+        // Previous JointState is set to the current one
+        prev_joint_states = robot_joint_states;
+        // Previous time of receiving SensorData is set to current one
+        prev_sensor_time = curr_sensor_time;
+        // Noted that the first SensorData message was received
+        fresh_sensor_data_received = true;
+      }
+      // Else, calculate the velocity using the previous message information
+      else
+      {
+        // Perform necessary velocity calculations
+        double time_elapsed = curr_sensor_time - prev_sensor_time;
+        double diff_position[2] = {robot_joint_states.position.at(0) - prev_joint_states.position.at(0),
+                                  robot_joint_states.position.at(1)- prev_joint_states.position.at(1)};
+        // Set the velocities
+        robot_joint_states.velocity = {diff_position[0] / time_elapsed, diff_position[1] / time_elapsed};
+
+        // Update the new previous JointState and SensorData time
+        prev_joint_states = robot_joint_states;
+        prev_sensor_time = curr_sensor_time;
+      }
+
+      // Publish the JointState
+      joint_states_pub->publish(robot_joint_states);
 
     }
 
@@ -160,10 +219,20 @@ class TurtleControlNode : public rclcpp::Node
     //
     // HELPER FUNCTIONS
     //
+    /// @brief 
     void init_var()
     {
       // Initialize the diff drive robot
       turtlebot = DiffDrive();
+    }
+
+    /// @brief Returns encoder ticks converted into angle radians wrapped to (-PI, PI]
+    /// @param num_ticks - 
+    double ticks_to_rad(int num_ticks)
+    {
+      double raw_angle = (num_ticks / std::pow(2, 12)) * 2 * PI;
+      double normalized_angle = normalize_angle(raw_angle);
+      return normalized_angle;
     }
 
 };
