@@ -14,15 +14,17 @@ find_package(std_srvs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(nuturtlebot_msgs REQUIRED)
+
 ###########
 ## Build ##
 ###########
 
-ament_export_dependencies(rclcpp geometry_msgs
-  sensor_msgs std_msgs std_srvs)
+ament_export_dependencies(
+  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs nuturtlebot_msgs)
 
 set(NUTURTLE_CONTROL_AMENT_TARGET_DEPENDENCIES
-  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs
+  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs nuturtlebot_msgs
 )
 set(NUTURTLE_CONTROL_TARGET_LINK_LIBRARIES
   yaml-cpp
