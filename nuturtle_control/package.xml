@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>nuturtle_control</name>
+  <version>0.0.0</version>
+  <description>Controls the turtlebot in simulation and in real life</description>
+  <maintainer email="damienkoh2025@u.northwestern.edu">damien</maintainer>
+  <license>APLv2</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <exec_depend>ros2launch</exec_depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
