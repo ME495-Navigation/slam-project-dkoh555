@@ -13,7 +13,7 @@ namespace turtlelib {
     }
 
     std::istream & operator>>(std::istream & is, Twist2D & tw) {
-        char ch;
+        char ch; // unitialized
         if (is.peek() == '[') {
             is >> ch >> tw.omega >> tw.x >> tw.y >> ch;
         } else {
@@ -47,7 +47,7 @@ namespace turtlelib {
 
     // Transform methods
     Point2D Transform2D::operator()(Point2D p) const {
-        Point2D pnt;
+        Point2D pnt; // use the constructor. but also no need for temporary
         pnt.x = p.x * cos(rot_comp) - p.y * sin(rot_comp);
         pnt.y = p.x * sin(rot_comp) + p.y * cos(rot_comp);
         pnt = pnt + trans_comp;
@@ -58,7 +58,7 @@ namespace turtlelib {
         Vector2D vec;
         vec.x = v.x * cos(rot_comp) - v.y * sin(rot_comp);
         vec.y = v.x * sin(rot_comp) + v.y * cos(rot_comp);
-        return vec;
+        return vec; // can return {}
     }
 
     Twist2D Transform2D::operator()(Twist2D v) const {
@@ -66,7 +66,7 @@ namespace turtlelib {
         twi.x = v.x * cos(rot_comp) - v.y * sin(rot_comp) + trans_comp.y * v.omega;
         twi.y = v.x * sin(rot_comp) + v.y * cos(rot_comp) - trans_comp.x * v.omega;
         twi.omega = v.omega;
-        return twi;
+        return twi; // can return {}
     }
 
     Transform2D Transform2D::inv() const {
@@ -78,8 +78,8 @@ namespace turtlelib {
     }
 
     Transform2D & Transform2D::operator*=(const Transform2D & rhs) {
-        double x = rhs.trans_comp.x * cos(rot_comp) - rhs.trans_comp.y * sin(rot_comp) + trans_comp.x;
-        double y = rhs.trans_comp.x * sin(rot_comp) + rhs.trans_comp.y * cos(rot_comp) + trans_comp.y;
+        double x = rhs.trans_comp.x * cos(rot_comp) - rhs.trans_comp.y * sin(rot_comp) + trans_comp.x; // const auto
+        double y = rhs.trans_comp.x * sin(rot_comp) + rhs.trans_comp.y * cos(rot_comp) + trans_comp.y; // const auto
         rot_comp = normalize_angle(rot_comp + rhs.rot_comp);
         trans_comp = Vector2D{x, y};
         return *this;
@@ -91,9 +91,9 @@ namespace turtlelib {
     }
 
     std::istream & operator>>(std::istream & is, Transform2D & tf) {
-        std::string s1, s2, s3;
+        std::string s1, s2, s3; // unitialized
         Vector2D vect;
-        double rot;
+        double rot; // unitialized
 
         if(is.peek() == 'd')
         {

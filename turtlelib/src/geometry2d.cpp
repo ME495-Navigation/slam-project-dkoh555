@@ -15,7 +15,7 @@ namespace turtlelib {
     }
 
     std::istream& operator>>(std::istream& is, Point2D& p) {
-        char ch;
+        char ch; // uninitialized
         if (is.peek() == '[') {
             is >> ch >> p.x >> p.y >> ch;
         } else {
@@ -28,7 +28,7 @@ namespace turtlelib {
         Vector2D vect;
         vect.x = head.x - tail.x;
         vect.y = head.y - tail.y;
-        return vect;
+        return vect; // return {head.x - tail.x, head.y - tail.y}
     }
 
     Point2D operator+(const Point2D & tail, const Vector2D & disp) {
@@ -44,7 +44,7 @@ namespace turtlelib {
     }
 
     std::istream& operator>>(std::istream & is, Vector2D & v) {
-        char ch;
+        char ch;//uninitialized
         if (is.peek() == '[') {
             is >> ch >> v.x >> v.y >> ch;
         } else {
@@ -55,11 +55,13 @@ namespace turtlelib {
 
     Vector2D normalizeVector(const Vector2D & v) {
     Vector2D v_hat{};
-    double v_norm = sqrt(v.x * v.x + v.y * v.y);
+    double v_norm = sqrt(v.x * v.x + v.y * v.y); // const auto
 
     if(v_norm == 0.0)
     {
         std::cout << "Invalid vector" << std::endl;
+        // this prints an error but the function still returns the same vector meaning the code has not much to go on
+        // if passing this. could throw an exception or divide by zero
     }
     else
     {

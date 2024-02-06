@@ -29,6 +29,7 @@ namespace turtlelib
         /// \brief Saves the image as a named file
         /// \param filename Desired file name
         /// \param extra image file that is modified
+        // is this object in  valid state after calling this function?
         void save_file(const std::string& filename, const std::string& extra);
 
         /// \brief Adds a line in the image
@@ -61,11 +62,11 @@ namespace turtlelib
         
         /// \brief Returns the image width
         /// \return Width of the image
-        int get_width();
+        int get_width(); // const
         
         /// \brief Returns the image height
         /// \return Height of the image
-        int get_height();
+        int get_height(); // const
     };
 }
 

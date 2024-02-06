@@ -47,7 +47,7 @@
 using std::string;
 
 using namespace std::chrono_literals;
-using namespace rosnu;
+using namespace rosnu; // do not using namespace rosnu bring in the directly
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -271,7 +271,7 @@ private:
       obs.color.b = 0.0;
       obs.color.a = 1.0;
 
-      obs.pose.position.x = this->obx_arr[i];
+      obs.pose.position.x = this->obx_arr[i]; // .at() unnecessary this->
       obs.pose.position.y = this->oby_arr[i];
       obs.pose.position.z = 0.125;
       obs.scale.x = this->obr * 2;

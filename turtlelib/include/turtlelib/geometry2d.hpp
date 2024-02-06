@@ -134,6 +134,7 @@ namespace turtlelib
 
     /// \brief Normalizes a 2 dimensional vector
     /// \param v - the vector to normalize
+    /// what happens if v = (0,0)
     Vector2D normalizeVector(const Vector2D & v);
 }
 

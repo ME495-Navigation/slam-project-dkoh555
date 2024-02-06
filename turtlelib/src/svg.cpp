@@ -21,12 +21,19 @@ namespace turtlelib {
         else 
         {
             std::cerr << "Unable to open file: " << filename << std::endl;
+            // throw an exception
         }
     }
 
     void SVG::draw_line(int x1, int y1, int x2, int y2, const std::string& color) {
-        elements.push_back("<line x1=\"" + std::to_string(x1) + "\" y1=\"" + std::to_string(y1) +
-                        "\" x2=\"" + std::to_string(x2) + "\" y2=\"" + std::to_string(y2) + "\" stroke=\"" + color + "\" stroke-width=\"2\" marker-start=\"url(#Arrow1Sstart)\"/>");
+        elements.push_back("<line x1=\""
+                           + std::to_string(x1)
+                           + "\" y1=\""
+                           + std::to_string(y1)
+                           + "\" x2=\"" + std::to_string(x2)
+                           + "\" y2=\"" + std::to_string(y2)
+                           + "\" stroke=\""
+                           + color + "\" stroke-width=\"2\" marker-start=\"url(#Arrow1Sstart)\"/>");
     }
 
     void SVG::draw_rectangle(int x, int y, int w, int h) {
