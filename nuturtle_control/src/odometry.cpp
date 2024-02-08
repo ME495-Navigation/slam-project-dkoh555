@@ -21,6 +21,8 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 
+#include "nusim/srv/teleport.hpp"
+
 using std::string;
 
 using namespace std::chrono_literals;
@@ -86,6 +88,7 @@ public:
         //
         // SERVICE
         //
+        initial_pose_srv = create_service<nusim::srv::Teleport>("initial_pose", std::bind(&OdometryNode::initial_pose_callback, this, _1, _2));
 
         //
         // BROADCASTER
@@ -106,6 +109,7 @@ private:
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub;
+    rclcpp::Service<nusim::srv::Teleport>::SharedPtr initial_pose_srv;
 
     //
     // Variables
@@ -128,7 +132,7 @@ private:
     }
 
     //
-    // NODE CALLBACKS
+    // SUBSCRIBER CALLBACKS
     //
     void joint_states_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
     {
@@ -185,6 +189,15 @@ private:
     }
 
     //
+    // SERVICE CALLBACKS
+    //
+    void initial_pose_callback(const std::shared_ptr<nusim::srv::Teleport::Request> request,
+                                std::shared_ptr<nusim::srv::Teleport::Response> response)
+    {
+        response->success = true;
+    }
+
+    //
     // TRANSFORM RELATED
     //
     // Broadcasts world -> red robot transform
@@ -227,7 +240,7 @@ private:
 
     bool check_params_string()
     {
-        return (body_id == "UNUSED" || wheel_left == "UNUSED" || wheel_right == "UNUSED");
+        return (body_id == "UNUSED" && wheel_left == "UNUSED" && wheel_right == "UNUSED");
     }
 };
 
