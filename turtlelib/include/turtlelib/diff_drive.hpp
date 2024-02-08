@@ -68,6 +68,9 @@ namespace turtlelib
             /// \brief Return the robot's current twist
             Twist2D get_twist() const;
 
+            // Setter Functions
+            void set_position(Transform2D new_position);
+
             // Helper Functions
             /// \brief Normalizes the angle values of the robot's wheel positions and body rotation
             void normalize_robot_angles();

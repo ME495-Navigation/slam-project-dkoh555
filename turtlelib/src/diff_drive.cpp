@@ -31,6 +31,16 @@ namespace turtlelib {
         return wheel_positions;
     }
 
+    Twist2D DiffDrive::get_twist() const {
+        return robot_twist;
+    }
+
+
+    // DiffDrive Setter functions
+    void DiffDrive::set_position(Transform2D new_position) {
+        robot_position = new_position;
+    }
+
     // DiffDrive helper functions
     void DiffDrive::normalize_robot_angles() {
         wheel_positions.right = normalize_angle(wheel_positions.right);
@@ -38,11 +48,6 @@ namespace turtlelib {
         Transform2D normalized_robot_position{robot_position.translation(),
                                                 normalize_angle(robot_position.rotation())};
     }
-
-    Twist2D DiffDrive::get_twist() const {
-        return robot_twist;
-    }
-
     // DiffDrive functions
     void DiffDrive::forward_k(WheelPosition position_change) {
         // Calculte the x velocity
