@@ -150,6 +150,7 @@ class OdometryNode : public rclcpp::Node
         nav_msgs::msg::Odometry odom_msg;
         odom_msg.header.stamp = latest_joint_states.header.stamp;
         odom_msg.header.frame_id = odom_id;
+        odom_msg.child_frame_id = body_id;
 
         // Fill in the positional information
         geometry_msgs::msg::Pose robot_pose;
