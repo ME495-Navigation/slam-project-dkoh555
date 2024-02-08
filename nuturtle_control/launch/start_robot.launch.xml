@@ -13,24 +13,33 @@
 
     </group>
 
+    <group if="$(eval '\'$(var cmd_src)\' == \'teleop\'')">
+
+        <node name="teleop_twist_keyboard" pkg ="teleop_twist_keyboard" exec="teleop_twist_keyboard"
+            output="screen" launch-prefix="xterm -e" /> 
+
+    </group>
+
     <!--  -->
     <group if="$(eval '\'$(var robot)\' == \'nusim\'')">
 
         <node pkg="nusim" exec="nusim">
             <param from="$(find-pkg-share nusim)/config/basic_world.yaml"/>
+            <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
         </node>
 
         <node pkg="nuturtle_control" exec="odometry">
             <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
             <param name="body_id" value="red/body_link"/>
-            <param name="wheel_left" value="red/body_link"/>
-            <param name="wheel_right" value="red/body_link"/>
+            <param name="wheel_left" value="red/wheel_left_joint"/>
+            <param name="wheel_right" value="red/wheel_right_joint"/>
             <remap from="joint_states" to="red/joint_states" />
         </node>
 
         <node pkg="nuturtle_control" exec="turtle_control">
             <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
             <remap from="joint_states" to="red/joint_states" />
+            <remap from="wheel_cmd" to="red/wheel_cmd" />
         </node>
 
         <group>

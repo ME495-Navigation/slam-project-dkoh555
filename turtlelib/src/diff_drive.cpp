@@ -88,8 +88,8 @@ namespace turtlelib {
         }
 
         // Calculate the change in wheel positions required to achieve the input twist
-        double right_change = (1/wheel_radius) * (twist.x - ((track_width * twist.omega)/2));
-        double left_change = (1/wheel_radius) * (twist.x + ((track_width * twist.omega)/2));
+        double right_change = (1/wheel_radius) * (twist.x + ((track_width * twist.omega)/2));
+        double left_change = (1/wheel_radius) * (twist.x - ((track_width * twist.omega)/2));
 
         return WheelPosition{right_change, left_change};
     }

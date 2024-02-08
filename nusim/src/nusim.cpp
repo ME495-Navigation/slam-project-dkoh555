@@ -62,13 +62,13 @@ public:
   //
   // CONSTRUCTOR
   //
-  nusimNode() : Node("nusim"), timestep(0)
+  nusimNode() : Node("nusim"), timestep(0), left_vel(0), right_vel(0)
   {
     //
     // PARAMETERS
     //
     // Frequency of timer
-    const auto frequency = declare_and_get_param<double>("frequency", 200.0f, *this, "Frequency of node timer");
+    frequency = declare_and_get_param<double>("frequency", 200.0f, *this, "Frequency of node timer");
     x0 = declare_and_get_param<double>("x", 0.0f, *this, "Starting x coord of robot");
     y0 = declare_and_get_param<double>("y", 0.0f, *this, "Starting y coord of robot");
     theta0 = declare_and_get_param<double>("theta", 0.0f, *this, "Starting directional angle of robot");
@@ -77,7 +77,31 @@ public:
     obx_arr = declare_and_get_param<std::vector<double>>("obstacles/x", std::vector<double>{}, *this, "x coords of each obstacles");
     oby_arr = declare_and_get_param<std::vector<double>>("obstacles/y", std::vector<double>{}, *this, "y coords of each obstacles");
     obr = declare_and_get_param<double>("obstacles/r", 0.75f, *this, "Radius of all obstacles");
-    
+
+    auto param_desc = rcl_interfaces::msg::ParameterDescriptor{}; // Prepare for parameter descriptions
+
+    param_desc.description = "";
+    declare_parameter("wheel_radius", -1.0, param_desc);
+    wheel_radius = get_parameter("wheel_radius").as_double();
+
+    param_desc.description = "";
+    declare_parameter("track_width", -1.0, param_desc);
+    track_width = get_parameter("track_width").as_double();
+
+    param_desc.description = "";
+    declare_parameter("motor_cmd_per_rad_sec", -1.0, param_desc);
+    motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();
+
+    param_desc.description = "";
+    declare_parameter("encoder_ticks_per_rad", -1.0, param_desc);
+    encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_double();
+
+    if (params_string_unfilled())
+    {
+        RCLCPP_ERROR(this->get_logger(), "Required paramters not provided");
+        rclcpp::shutdown();
+    }
+
     // If the x and y obstacle arrays are different size, return an error and exit
     if (obx_arr.size() != oby_arr.size())
     {
@@ -140,17 +164,21 @@ private:
   //
   // Variables
   //
+  double frequency;
   size_t timestep;
   double x0, y0, theta0; // Starting pos
   double x, y, theta; // Current pos
   double arena_x_length, arena_y_length; // World dimensions
   std::vector<double> obx_arr, oby_arr; // Obstacle coords
   double obr;
+  double wheel_radius, track_width, motor_cmd_per_rad_sec, encoder_ticks_per_rad;
+  double left_vel, right_vel;
 
   //
   // Objects
   //
   DiffDrive turtlebot;
+  WheelPosition wheel_change;
 
   //
   // TIMER CALLBACK
@@ -163,6 +191,26 @@ private:
     new_msg.data = timestep;
     timestep_pub->publish(new_msg);
     timestep += 1;
+
+    // Note change in WheelPosition, and run it through forward_k
+    WheelPosition wheel_change{right_vel / frequency, left_vel / frequency};
+    turtlebot.forward_k(wheel_change);
+
+
+    // RCLCPP_INFO(
+    //         get_logger(), "left change: %f", left_vel / frequency);
+    // RCLCPP_INFO(
+    //         get_logger(), "right change: %f", right_vel / frequency);
+
+    // RCLCPP_INFO(
+    //         get_logger(), "x: %f", turtlebot.get_position().translation().x);
+    // RCLCPP_INFO(
+    //         get_logger(), "y: %f", turtlebot.get_position().translation().y);
+    
+    // Update the current position in nusim
+    x = turtlebot.get_position().translation().x;
+    y = turtlebot.get_position().translation().y;
+    theta = turtlebot.get_position().rotation();
 
     // Transforms
     tf_world_robot(x, y, theta);
@@ -177,7 +225,20 @@ private:
   //
   void wheel_cmd_callback(const nuturtlebot_msgs::msg::WheelCommands::SharedPtr msg)
   {
+    // Need to convert the MCU into wheel velocities
+    // Note the WheelCommand readings
+    nuturtlebot_msgs::msg::WheelCommands latest_command = *msg;
+    auto left_mcu = latest_command.left_velocity;
+    auto right_mcu = latest_command.right_velocity;
 
+    // RCLCPP_INFO(
+    //         get_logger(), "left: %d", left_mcu);
+    // RCLCPP_INFO(
+    //         get_logger(), "right: %d", right_mcu);
+
+    // Convert them into wheel velocities
+    left_vel = left_mcu * motor_cmd_per_rad_sec;
+    right_vel = right_mcu * motor_cmd_per_rad_sec;
   }
 
   //
@@ -314,7 +375,12 @@ private:
     theta = theta0;
 
     // Initialize the turtlebot
-    turtlebot = DiffDrive(); 
+    turtlebot = DiffDrive(wheel_radius, track_width, Transform2D(Vector2D{x, y}, theta), WheelPosition()); 
+  }
+
+  bool params_string_unfilled()
+  {
+      return (wheel_radius == -1.0 || track_width == -1.0 || motor_cmd_per_rad_sec == -1.0 || encoder_ticks_per_rad == -1.0);
   }
 
 };

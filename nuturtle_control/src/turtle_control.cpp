@@ -140,9 +140,14 @@ class TurtleControlNode : public rclcpp::Node
         // Use the Twist2D message to for inverse kinematics to calculate how much the wheels have rotated
         WheelPosition wheels_delta = turtlebot.inverse_k(converted_twist);
 
+        // RCLCPP_INFO(
+        //         get_logger(), "wheel left: %f", wheels_delta.left);
+        // RCLCPP_INFO(
+        //         get_logger(), "wheel right: %f", wheels_delta.right);
+
         // Use the calculated WheelPosition for forward kinematics to find and update the changes in the robot's configuration
         // (Including wheel angles, and position of the robot)
-        turtlebot.forward_k(wheels_delta);
+        // turtlebot.forward_k(wheels_delta);
 
         // Adjust the found WheelPosition so that it is suitable to be sent to the turtlebot motors
         float raw_left_vel, raw_right_vel;    // Left and right wheel velocity, in "motor command units" (mcu)
@@ -150,6 +155,11 @@ class TurtleControlNode : public rclcpp::Node
                                               // -265 mcu and 265 mcu, and 1 mcu = 0.024 rad/sec
         raw_left_vel = wheels_delta.left / motor_cmd_per_rad_sec;
         raw_right_vel = wheels_delta.right / motor_cmd_per_rad_sec;
+
+        // RCLCPP_INFO(
+        //         get_logger(), "raw left: %f", raw_left_vel);
+        // RCLCPP_INFO(
+        //         get_logger(), "raw right: %f", raw_right_vel);
 
         // Convert the raw velocities to integers so that it's compatible with MCU ticks
         int mcu_left_vel = static_cast<int>(std::round(raw_left_vel));
@@ -246,7 +256,7 @@ class TurtleControlNode : public rclcpp::Node
     void init_var()
     {
       // Initialize the diff drive robot
-      turtlebot = DiffDrive();
+      turtlebot = DiffDrive(wheel_radius, track_width);
     }
 
     /// @brief Returns encoder ticks converted into angle radians wrapped to (-PI, PI]

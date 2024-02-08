@@ -170,15 +170,6 @@ private:
         // tf2_robot_quaternion.normalize(); // Ensure the quaternion's magnitude is 1
         // Then convert that tf2 quaternion into a suitable quaternion message
 
-        RCLCPP_INFO(
-                get_logger(), "x: %f", tf2_robot_quaternion.x());
-        RCLCPP_INFO(
-                get_logger(), "y: %f", tf2_robot_quaternion.y());
-        RCLCPP_INFO(
-                get_logger(), "z: %f", tf2_robot_quaternion.z());
-        RCLCPP_INFO(
-                get_logger(), "w: %f", tf2_robot_quaternion.w());
-
         // geometry_msgs::msg::Quaternion robot_quaternion;
         // tf2::convert(tf2_robot_quaternion, robot_quaternion);
         robot_pose.orientation.x = tf2_robot_quaternion.x();

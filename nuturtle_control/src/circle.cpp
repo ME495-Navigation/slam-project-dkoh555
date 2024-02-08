@@ -128,8 +128,8 @@ private:
                               std::shared_ptr<nuturtle_control::srv::Control::Response> response)
   {
       // Note the received request and update variables accordingly
-      linear_vel = (request->velocity) * (request->radius);
-      angular_vel = request->radius;
+      linear_vel = (request->velocity) * request->radius;
+      angular_vel = request->velocity;
 
       // Activate publisher
       pub_active = true;
