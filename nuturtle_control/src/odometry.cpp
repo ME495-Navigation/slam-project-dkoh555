@@ -194,6 +194,16 @@ private:
     void initial_pose_callback(const std::shared_ptr<nusim::srv::Teleport::Request> request,
                                 std::shared_ptr<nusim::srv::Teleport::Response> response)
     {
+        // Note the received request as a Transform2D
+        Transform2D received_trans{Vector2D{request->x, request->y}, request->theta};
+        // Set the position configuration of the robot
+        turtlebot.set_transform(received_trans);
+
+        // Broadcast the TF from odom to body
+        tf_odom_robot(turtlebot.get_position().translation().x,
+                    turtlebot.get_position().translation().y, turtlebot.get_position().rotation());
+
+        // Give a successful response
         response->success = true;
     }
 

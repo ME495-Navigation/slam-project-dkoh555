@@ -37,8 +37,8 @@ namespace turtlelib {
 
 
     // DiffDrive Setter functions
-    void DiffDrive::set_position(Transform2D new_position) {
-        robot_position = new_position;
+    void DiffDrive::set_transform(Transform2D new_transform) {
+        robot_position = new_transform;
     }
 
     // DiffDrive helper functions
