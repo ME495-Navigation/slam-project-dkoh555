@@ -136,6 +136,8 @@ private:
     //
     void joint_states_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
     {
+        std::cout << "TESTING!!!" << std::endl;
+
         // Note the received JointState message
         latest_joint_states = *msg;
 
@@ -165,11 +167,24 @@ private:
         // Use a tf2 object and function to convert roll pitch yaw into quaternion
         tf2::Quaternion tf2_robot_quaternion;
         tf2_robot_quaternion.setRPY(0.0, 0.0, turtlebot.get_position().rotation());
-        tf2_robot_quaternion.normalize(); // Ensure the quaternion's magnitude is 1
+        // tf2_robot_quaternion.normalize(); // Ensure the quaternion's magnitude is 1
         // Then convert that tf2 quaternion into a suitable quaternion message
-        geometry_msgs::msg::Quaternion robot_quaternion;
-        tf2::convert(tf2_robot_quaternion, robot_quaternion);
-        robot_pose.orientation = robot_quaternion;
+
+        RCLCPP_INFO(
+                get_logger(), "x: %f", tf2_robot_quaternion.x());
+        RCLCPP_INFO(
+                get_logger(), "y: %f", tf2_robot_quaternion.y());
+        RCLCPP_INFO(
+                get_logger(), "z: %f", tf2_robot_quaternion.z());
+        RCLCPP_INFO(
+                get_logger(), "w: %f", tf2_robot_quaternion.w());
+
+        // geometry_msgs::msg::Quaternion robot_quaternion;
+        // tf2::convert(tf2_robot_quaternion, robot_quaternion);
+        robot_pose.orientation.x = tf2_robot_quaternion.x();
+        robot_pose.orientation.y = tf2_robot_quaternion.y();
+        robot_pose.orientation.z = tf2_robot_quaternion.z();
+        robot_pose.orientation.w = tf2_robot_quaternion.w();
 
         // Retrieve the current twist of the robot and fill in twist message information
         Twist2D curr_twist = turtlebot.get_twist();
@@ -228,11 +243,15 @@ private:
         // Rotation
         tf2::Quaternion raw_quat;
         raw_quat.setRPY(0, 0, theta_in);
-        raw_quat.normalize();
+        // raw_quat.normalize();
 
-        geometry_msgs::msg::Quaternion quat;
-        tf2::convert(raw_quat, quat);
-        msg.transform.rotation = quat;
+        // geometry_msgs::msg::Quaternion quat;
+        // tf2::convert(raw_quat, quat);
+        msg.transform.rotation.x = raw_quat.x();
+        msg.transform.rotation.y = raw_quat.y();
+        msg.transform.rotation.z = raw_quat.z();
+        msg.transform.rotation.w = raw_quat.w();
+
 
         // Broadcast transform
         tf_broadcaster->sendTransform(msg);
