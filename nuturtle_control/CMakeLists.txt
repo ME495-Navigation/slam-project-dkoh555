@@ -16,17 +16,18 @@ find_package(geometry_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(nuturtlebot_msgs REQUIRED)
 find_package(turtlelib REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 ###########
 ## Build ##
 ###########
 
 ament_export_dependencies(
-  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs nuturtlebot_msgs
+  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs nuturtlebot_msgs nav_msgs
 )
 
 set(NUTURTLE_CONTROL_AMENT_TARGET_DEPENDENCIES
-  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs nuturtlebot_msgs
+  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs nuturtlebot_msgs nav_msgs
 )
 set(NUTURTLE_CONTROL_TARGET_LINK_LIBRARIES
   yaml-cpp
@@ -48,11 +49,27 @@ target_link_libraries(turtle_control
   ${NUTURTLE_CONTROL_TARGET_LINK_LIBRARIES}
 )
 
+# odometry node
+add_executable(odometry src/odometry.cpp)
+set_target_properties(odometry
+  PROPERTIES
+  OUTPUT_NAME odometry
+  PREFIX ""
+)
+ament_target_dependencies(odometry
+  ${NUTURTLE_CONTROL_AMENT_TARGET_DEPENDENCIES}
+)
+target_link_libraries(odometry
+  ${NUTURTLE_CONTROL_TARGET_LINK_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############
 
-install(TARGETS turtle_control
+install(TARGETS
+  turtle_control
+  odometry
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY
