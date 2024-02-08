@@ -40,8 +40,30 @@ class TurtleControlNode : public rclcpp::Node
       auto param_desc = rcl_interfaces::msg::ParameterDescriptor{}; // Prepare for parameter descriptions
 
       param_desc.description = "Frequency of node timer";
-      declare_parameter("frequency", 95.0, param_desc);
+      declare_parameter("frequency", 100.0, param_desc);
       frequency = get_parameter("frequency").as_double();
+
+      param_desc.description = "";
+      declare_parameter("wheel_radius", -1.0, param_desc);
+      wheel_radius = get_parameter("wheel_radius").as_double();
+
+      param_desc.description = "";
+      declare_parameter("track_width", -1.0, param_desc);
+      track_width = get_parameter("track_width").as_double();
+
+      param_desc.description = "";
+      declare_parameter("motor_cmd_per_rad_sec", -1.0, param_desc);
+      motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();
+
+      param_desc.description = "";
+      declare_parameter("encoder_ticks_per_rad", -1.0, param_desc);
+      encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_double();
+
+      if (params_string_unfilled())
+      {
+          RCLCPP_ERROR(this->get_logger(), "Required paramters not provided");
+          rclcpp::shutdown();
+      }
 
       //
       // Additional variable initialization
@@ -89,6 +111,7 @@ class TurtleControlNode : public rclcpp::Node
     // Variables
     //
     double frequency;
+    double wheel_radius, track_width, motor_cmd_per_rad_sec, encoder_ticks_per_rad;
     bool fresh_cmd_vel_received, fresh_sensor_data_received;
 
     //
@@ -125,8 +148,8 @@ class TurtleControlNode : public rclcpp::Node
         float raw_left_vel, raw_right_vel;    // Left and right wheel velocity, in "motor command units" (mcu)
                                               // For the turtlebot, each motor can be command with an integer velocity of between
                                               // -265 mcu and 265 mcu, and 1 mcu = 0.024 rad/sec
-        raw_left_vel = wheels_delta.left / 0.024;
-        raw_right_vel = wheels_delta.right / 0.024;
+        raw_left_vel = wheels_delta.left / motor_cmd_per_rad_sec;
+        raw_right_vel = wheels_delta.right / motor_cmd_per_rad_sec;
 
         // Convert the raw velocities to integers so that it's compatible with MCU ticks
         int mcu_left_vel = static_cast<int>(std::round(raw_left_vel));
@@ -230,9 +253,14 @@ class TurtleControlNode : public rclcpp::Node
     /// @param num_ticks - 
     double ticks_to_rad(int num_ticks)
     {
-      double raw_angle = (num_ticks / std::pow(2, 12)) * 2 * PI;
+      double raw_angle = (num_ticks / encoder_ticks_per_rad);
       double normalized_angle = normalize_angle(raw_angle);
       return normalized_angle;
+    }
+
+    bool params_string_unfilled()
+    {
+        return (wheel_radius == -1.0 || track_width == -1.0 || motor_cmd_per_rad_sec == -1.0 || encoder_ticks_per_rad == -1.0);
     }
 
 };

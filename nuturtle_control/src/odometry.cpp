@@ -64,7 +64,7 @@ public:
         declare_parameter("wheel_right", "UNUSED", param_desc);
         wheel_right = get_parameter("wheel_right").as_string();
 
-        if (check_params_string())
+        if (params_string_unfilled())
         {
             RCLCPP_ERROR(this->get_logger(), "Required paramters not provided");
             rclcpp::shutdown();
@@ -248,9 +248,9 @@ private:
         turtlebot = DiffDrive();
     }
 
-    bool check_params_string()
+    bool params_string_unfilled()
     {
-        return (body_id == "UNUSED" && wheel_left == "UNUSED" && wheel_right == "UNUSED");
+        return (body_id == "UNUSED" || wheel_left == "UNUSED" || wheel_right == "UNUSED");
     }
 };
 
