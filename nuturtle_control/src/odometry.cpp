@@ -19,6 +19,7 @@
 #include "turtlelib/diff_drive.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2_ros/transform_broadcaster.h"
 
 using std::string;
 
@@ -89,6 +90,7 @@ public:
         //
         // BROADCASTER
         //
+        tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
         //
         // TIMER
@@ -101,6 +103,7 @@ private:
     // Node-related Declarations
     //
     rclcpp::TimerBase::SharedPtr timer;
+    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub;
 
@@ -175,6 +178,41 @@ private:
         odom_msg.pose.pose = robot_pose;
         odom_msg.twist.twist = robot_twist;
         odom_pub->publish(odom_msg);
+
+        // Broadcast the TF from odom to body
+        tf_odom_robot(turtlebot.get_position().translation().x,
+                    turtlebot.get_position().translation().y, turtlebot.get_position().rotation());
+    }
+
+    //
+    // TRANSFORM RELATED
+    //
+    // Broadcasts world -> red robot transform
+    void tf_odom_robot(double x_in, double y_in, double theta_in)
+    {
+        geometry_msgs::msg::TransformStamped msg;
+
+        // Key info
+        msg.header.stamp = latest_joint_states.header.stamp;
+        msg.header.frame_id = odom_id;
+        msg.child_frame_id = body_id;
+
+        // Translation
+        msg.transform.translation.x = x_in;
+        msg.transform.translation.y = y_in;
+        msg.transform.translation.z = 0.0;
+
+        // Rotation
+        tf2::Quaternion raw_quat;
+        raw_quat.setRPY(0, 0, theta_in);
+        raw_quat.normalize();
+
+        geometry_msgs::msg::Quaternion quat;
+        tf2::convert(raw_quat, quat);
+        msg.transform.rotation = quat;
+
+        // Broadcast transform
+        tf_broadcaster->sendTransform(msg);
     }
 
     //
