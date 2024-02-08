@@ -17,17 +17,21 @@ find_package(yaml-cpp REQUIRED)
 find_package(nuturtlebot_msgs REQUIRED)
 find_package(turtlelib REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 ###########
 ## Build ##
 ###########
 
 ament_export_dependencies(
-  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs nuturtlebot_msgs nav_msgs
+  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs
+  nuturtlebot_msgs nav_msgs tf2 tf2_geometry_msgs
 )
 
 set(NUTURTLE_CONTROL_AMENT_TARGET_DEPENDENCIES
-  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs nuturtlebot_msgs nav_msgs
+  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs
+  nuturtlebot_msgs nav_msgs tf2 tf2_geometry_msgs
 )
 set(NUTURTLE_CONTROL_TARGET_LINK_LIBRARIES
   yaml-cpp

@@ -10,12 +10,15 @@
 #include <map>
 
 #include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
 #include "nuturtlebot_msgs/msg/wheel_commands.hpp"
 #include "nuturtlebot_msgs/msg/sensor_data.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 
 #include "turtlelib/diff_drive.hpp"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 using std::string;
 
@@ -152,7 +155,17 @@ class OdometryNode : public rclcpp::Node
         geometry_msgs::msg::Pose robot_pose;
         robot_pose.position.x = turtlebot.get_position().translation().x;
         robot_pose.position.y = turtlebot.get_position().translation().y;
+
         // Use a tf2 object and function to convert roll pitch yaw into quaternion
+        tf2::Quaternion tf2_robot_quaternion;
+        tf2_robot_quaternion.setRPY(0.0, 0.0, turtlebot.get_position().rotation());
+        tf2_robot_quaternion.normalize(); // Ensure the quaternion's magnitude is 1
+        // Then convert that tf2 quaternion into a suitable quaternion message
+        geometry_msgs::msg::Quaternion robot_quaternion;
+        tf2::convert(tf2_robot_quaternion, robot_quaternion);
+        robot_pose.orientation = robot_quaternion;
+        
+        
     }
 
     //
