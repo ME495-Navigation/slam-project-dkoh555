@@ -7,19 +7,19 @@ namespace turtlelib {
     
     // DiffDrive constructors
     DiffDrive::DiffDrive() :  wheel_radius(0.5), track_width(2.0),
-        robot_position(Vector2D{0.0, 0.0}, 0.0), wheel_positions{0.0, 0.0} {
+        robot_position(Vector2D{0.0, 0.0}, 0.0), wheel_positions{0.0, 0.0}, robot_twist{} {
     }
 
     DiffDrive::DiffDrive(double wheel_radius, double track_width) : 
         wheel_radius(wheel_radius), track_width(track_width),
-        robot_position(Vector2D{0.0, 0.0}, 0.0), wheel_positions{0.0, 0.0} {
+        robot_position(Vector2D{0.0, 0.0}, 0.0), wheel_positions{0.0, 0.0}, robot_twist{} {
     }
 
     DiffDrive::DiffDrive(double wheel_radius, double track_width,
                 Transform2D robot_position, WheelPosition wheel_positions) : 
         wheel_radius(wheel_radius), track_width(track_width),
         robot_position{Vector2D{robot_position.translation().x, robot_position.translation().y}, normalize_angle(robot_position.rotation())},
-        wheel_positions(WheelPosition{normalize_angle(wheel_positions.right), normalize_angle(wheel_positions.left)}) {
+        wheel_positions(WheelPosition{normalize_angle(wheel_positions.right), normalize_angle(wheel_positions.left)}), robot_twist{} {
     }
 
     // DiffDrive Getter functions
@@ -37,6 +37,10 @@ namespace turtlelib {
         wheel_positions.left = normalize_angle(wheel_positions.left);
         Transform2D normalized_robot_position{robot_position.translation(),
                                                 normalize_angle(robot_position.rotation())};
+    }
+
+    Twist2D DiffDrive::get_twist() const {
+        return robot_twist;
     }
 
     // DiffDrive functions
@@ -66,6 +70,9 @@ namespace turtlelib {
 
         // Normalize the wheel and body rotation angles of the robot
         normalize_robot_angles();
+
+        // Update the current twist of the robot
+        robot_twist = curr_twist;
     }
 
     WheelPosition DiffDrive::inverse_k(Twist2D twist) {

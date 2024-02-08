@@ -18,7 +18,7 @@
 
 #include "turtlelib/diff_drive.hpp"
 #include "tf2/LinearMath/Quaternion.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using std::string;
 
@@ -165,7 +165,17 @@ class OdometryNode : public rclcpp::Node
         tf2::convert(tf2_robot_quaternion, robot_quaternion);
         robot_pose.orientation = robot_quaternion;
         
-        
+        // Retrieve the current twist of the robot and fill in twist message information
+        Twist2D curr_twist = turtlebot.get_twist();
+        geometry_msgs::msg::Twist robot_twist;
+        robot_twist.linear.x = curr_twist.x;
+        robot_twist.linear.y = curr_twist.y;
+        robot_twist.angular.z = curr_twist.omega;
+
+        // Combine different components into the odometry message
+        odom_msg.pose.pose = robot_pose;
+        odom_msg.twist.twist = robot_twist;
+        odom_pub->publish(odom_msg);
     }
 
     //

@@ -35,8 +35,10 @@ namespace turtlelib
             double track_width;
             /// \brief the robot's position configuration
             Transform2D robot_position;
-            /// @brief the robot's wheel positions in radians {right, left}
+            /// \brief the robot's wheel positions in radians {right, left}
             WheelPosition wheel_positions;
+            /// \brief the robot's current twist
+            Twist2D robot_twist;
         
         public:
             // Constructors
@@ -62,6 +64,9 @@ namespace turtlelib
 
             /// \brief Return the robot's current wheel positions
             WheelPosition get_wheels() const;
+
+            /// \brief Return the robot's current twist
+            Twist2D get_twist() const;
 
             // Helper Functions
             /// \brief Normalizes the angle values of the robot's wheel positions and body rotation
