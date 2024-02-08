@@ -20,6 +20,19 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(nusim REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+###############
+## Interface ##
+###############
+
+rosidl_generate_interfaces(control_srv
+  "srv/Control.srv"
+  LIBRARY_NAME ${PROJECT_NAME}
+)
+
+rosidl_get_typesupport_target(cpp_typesupport_target
+  control_srv "rosidl_typesupport_cpp")
 
 ###########
 ## Build ##
@@ -36,6 +49,7 @@ set(NUTURTLE_CONTROL_AMENT_TARGET_DEPENDENCIES
   nuturtlebot_msgs nav_msgs tf2 tf2_geometry_msgs
   nusim
 )
+
 set(NUTURTLE_CONTROL_TARGET_LINK_LIBRARIES
   yaml-cpp
   turtlelib::turtlelib
@@ -70,6 +84,21 @@ target_link_libraries(odometry
   ${NUTURTLE_CONTROL_TARGET_LINK_LIBRARIES}
 )
 
+# circle node
+add_executable(circle src/circle.cpp)
+set_target_properties(circle
+  PROPERTIES
+  OUTPUT_NAME circle
+  PREFIX ""
+)
+ament_target_dependencies(circle
+  ${NUTURTLE_CONTROL_AMENT_TARGET_DEPENDENCIES}
+)
+
+target_link_libraries(circle
+  ${NUTURTLE_CONTROL_TARGET_LINK_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############
@@ -77,12 +106,12 @@ target_link_libraries(odometry
 install(TARGETS
   turtle_control
   odometry
-  DESTINATION lib/${PROJECT_NAME})
+  circle
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(DIRECTORY
-  # launch
-  # srv
-  # config
+  srv
   DESTINATION share/${PROJECT_NAME}/
 )
 
