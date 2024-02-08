@@ -68,7 +68,7 @@ public:
     //
     control_srv = create_service<nuturtle_control::srv::Control>("control", std::bind(&CircleNode::control_callback, this, _1, _2));
     reverse_srv = create_service<std_srvs::srv::Empty>("reverse", std::bind(&CircleNode::reverse_callback, this, _1, _2));
-    stop_srv = create_service<std_srvs::srv::Empty>("stop", std::bind(&CircleNode::reverse_callback, this, _1, _2));
+    stop_srv = create_service<std_srvs::srv::Empty>("stop", std::bind(&CircleNode::stop_callback, this, _1, _2));
     //
     // BROADCASTER
     //
@@ -148,6 +148,7 @@ private:
                       std::shared_ptr<std_srvs::srv::Empty::Response> /* response */)
   {
       linear_vel = 0.0;
+      angular_vel = 0.0;
       last_pub = true;
   }
 
