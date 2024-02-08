@@ -39,12 +39,17 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
+#include "nuturtlebot_msgs/msg/wheel_commands.hpp"
+#include "nuturtlebot_msgs/msg/sensor_data.hpp"
 
 #include "std_msgs/msg/u_int64.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nusim/srv/teleport.hpp"
 
+#include "turtlelib/diff_drive.hpp"
+
 using std::string;
+using namespace turtlelib;
 
 using namespace std::chrono_literals;
 using namespace rosnu;
@@ -83,6 +88,11 @@ public:
     // Additional variable initialization
     //
     init_var();
+
+    //
+    // SUBSCRIBERS
+    //
+    wheel_cmd_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>("red/wheel_cmd", 10, std::bind(&nusimNode::wheel_cmd_callback, this, _1));
 
     //
     // PUBLISHERS
@@ -125,6 +135,7 @@ private:
   rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_srv;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wall_pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obs_pub;
+  rclcpp::Subscription<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr wheel_cmd_sub;
 
   //
   // Variables
@@ -135,6 +146,11 @@ private:
   double arena_x_length, arena_y_length; // World dimensions
   std::vector<double> obx_arr, oby_arr; // Obstacle coords
   double obr;
+
+  //
+  // Objects
+  //
+  DiffDrive turtlebot;
 
   //
   // TIMER CALLBACK
@@ -157,14 +173,18 @@ private:
   }
 
   //
+  // SUBSCRIBER CALLBACKS
+  //
+  void wheel_cmd_callback(const nuturtlebot_msgs::msg::WheelCommands::SharedPtr msg)
+  {
+
+  }
+
+  //
   // SERVICE CALLBACKS
   //
   void reset_callback(std::shared_ptr<std_srvs::srv::Empty::Request>, std::shared_ptr<std_srvs::srv::Empty::Response>)
   {
-    // timestep = 0;
-    // x = x0;
-    // y = y0;
-    // theta = theta0;
     init_var();
   }
 
@@ -287,11 +307,14 @@ private:
   // HELPER FUNCTIONS
   //
   void init_var()
-  {
+  { 
     timestep = 0;
     x = x0;
     y = y0;
     theta = theta0;
+
+    // Initialize the turtlebot
+    turtlebot = DiffDrive(); 
   }
 
 };
