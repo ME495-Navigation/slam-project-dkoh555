@@ -214,15 +214,15 @@ class TurtleControlNode : public rclcpp::Node
       double left_angle = ticks_to_rad(left_encoder);
       double right_angle = ticks_to_rad(right_encoder);
 
-      RCLCPP_INFO(
-              get_logger(), "encoder left: %d", left_encoder);
-      RCLCPP_INFO(
-              get_logger(), "encoder right: %d", right_encoder);
+      // RCLCPP_INFO(
+      //         get_logger(), "encoder left: %d", left_encoder);
+      // RCLCPP_INFO(
+      //         get_logger(), "encoder right: %d", right_encoder);
 
-      RCLCPP_INFO(
-              get_logger(), "angle left: %f", left_angle);
-      RCLCPP_INFO(
-              get_logger(), "angle right: %f", right_angle);
+      // RCLCPP_INFO(
+      //         get_logger(), "angle left: %f", left_angle);
+      // RCLCPP_INFO(
+      //         get_logger(), "angle right: %f", right_angle);
 
       // Fill the JointStates message with the relevant information
       sensor_msgs::msg::JointState robot_joint_states;
@@ -231,6 +231,13 @@ class TurtleControlNode : public rclcpp::Node
 
       // Fill in position information
       robot_joint_states.position = {left_angle, right_angle};
+
+      // RCLCPP_INFO(
+      //         get_logger(), "msg.angle left: %f", robot_joint_states.position[0]);
+      // RCLCPP_INFO(
+      //         get_logger(), "msg.angle right: %f", robot_joint_states.position[1]);
+
+      // ALL GOOD SO FAR
 
       // Fill in velocity information
       // If this is the first SensorData message received, initialize the velocity as zeros
@@ -244,21 +251,38 @@ class TurtleControlNode : public rclcpp::Node
         prev_sensor_time = curr_sensor_time;
         // Noted that the first SensorData message was received
         fresh_sensor_data_received = true;
+
+        RCLCPP_INFO(
+              get_logger(), "TRIGGERED");
+        
+        // THIS CONDITION IS ALSO GOOD
       }
       // Else, calculate the velocity using the previous message information
       else
       {
         // Perform necessary velocity calculations
         double time_elapsed = curr_sensor_time - prev_sensor_time;
-        double diff_position[2] = {robot_joint_states.position.at(0) - prev_joint_states.position.at(0),
-                                  robot_joint_states.position.at(1)- prev_joint_states.position.at(1)};
+        double diff_position[2] = {robot_joint_states.position[0] - prev_joint_states.position[0],
+                                  robot_joint_states.position[1]- prev_joint_states.position[1]};
         // Set the velocities
         robot_joint_states.velocity = {diff_position[0] / time_elapsed, diff_position[1] / time_elapsed};
 
         // Update the new previous JointState and SensorData time
         prev_joint_states = robot_joint_states;
         prev_sensor_time = curr_sensor_time;
+
+        // RCLCPP_INFO(
+        //       get_logger(), "msg.angle left: %f", robot_joint_states.position[0]);
+        // RCLCPP_INFO(
+        //       get_logger(), "msg.angle right: %f", robot_joint_states.position[1]);
+
+        // THIS CONDITION IS GOOD
       }
+
+        RCLCPP_INFO(
+              get_logger(), "msg.angle left: %f", robot_joint_states.position[0]);
+        RCLCPP_INFO(
+              get_logger(), "msg.angle right: %f", robot_joint_states.position[1]);
 
       // Publish the JointState
       joint_states_pub->publish(robot_joint_states);

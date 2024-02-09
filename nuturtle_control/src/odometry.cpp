@@ -170,49 +170,59 @@ private:
         WheelPosition curr_wheel_position{latest_joint_states.position[1], latest_joint_states.position[0]};
         WheelPosition old_wheel_position = turtlebot.get_wheels();
 
+        RCLCPP_INFO(
+              get_logger(), "curr_left: %f", curr_wheel_position.left);
+        RCLCPP_INFO(
+              get_logger(), "curr_right: %f", curr_wheel_position.right);
+
         // Note the change in WheelPosition
-        WheelPosition delta_wheel_position{curr_wheel_position.right - old_wheel_position.right,
-                                           curr_wheel_position.left - old_wheel_position.left};
+        WheelPosition delta_wheel_position{calc_angle_diff(curr_wheel_position.right, old_wheel_position.right),
+                                           calc_angle_diff(curr_wheel_position.left, old_wheel_position.left)};
 
         // Update the robot configuration with forward_k
         turtlebot.forward_k(delta_wheel_position);
 
-        // Publish the corresponding odometry message
-        // Initialize the odometry message
-        nav_msgs::msg::Odometry odom_msg;
-        odom_msg.header.stamp = latest_joint_states.header.stamp;
-        odom_msg.header.frame_id = odom_id;
-        odom_msg.child_frame_id = body_id;
+        // RCLCPP_INFO(
+        //       get_logger(), "x: %f", turtlebot.get_position().translation().x);
+        //  RCLCPP_INFO(
+        //       get_logger(), "y: %f", turtlebot.get_position().translation().y);
 
-        // Fill in the positional information
-        geometry_msgs::msg::Pose robot_pose;
-        robot_pose.position.x = turtlebot.get_position().translation().x;
-        robot_pose.position.y = turtlebot.get_position().translation().y;
+        // // Publish the corresponding odometry message
+        // // Initialize the odometry message
+        // nav_msgs::msg::Odometry odom_msg;
+        // odom_msg.header.stamp = latest_joint_states.header.stamp;
+        // odom_msg.header.frame_id = odom_id;
+        // odom_msg.child_frame_id = body_id;
 
-        // Use a tf2 object and function to convert roll pitch yaw into quaternion
-        tf2::Quaternion tf2_robot_quaternion;
-        tf2_robot_quaternion.setRPY(0.0, 0.0, turtlebot.get_position().rotation());
-        // tf2_robot_quaternion.normalize(); // Ensure the quaternion's magnitude is 1
-        // Then convert that tf2 quaternion into a suitable quaternion message
+        // // Fill in the positional information
+        // geometry_msgs::msg::Pose robot_pose;
+        // robot_pose.position.x = turtlebot.get_position().translation().x;
+        // robot_pose.position.y = turtlebot.get_position().translation().y;
 
-        // geometry_msgs::msg::Quaternion robot_quaternion;
-        // tf2::convert(tf2_robot_quaternion, robot_quaternion);
-        robot_pose.orientation.x = tf2_robot_quaternion.x();
-        robot_pose.orientation.y = tf2_robot_quaternion.y();
-        robot_pose.orientation.z = tf2_robot_quaternion.z();
-        robot_pose.orientation.w = tf2_robot_quaternion.w();
+        // // Use a tf2 object and function to convert roll pitch yaw into quaternion
+        // tf2::Quaternion tf2_robot_quaternion;
+        // tf2_robot_quaternion.setRPY(0.0, 0.0, turtlebot.get_position().rotation());
+        // // tf2_robot_quaternion.normalize(); // Ensure the quaternion's magnitude is 1
+        // // Then convert that tf2 quaternion into a suitable quaternion message
 
-        // Retrieve the current twist of the robot and fill in twist message information
-        Twist2D curr_twist = turtlebot.get_twist();
-        geometry_msgs::msg::Twist robot_twist;
-        robot_twist.linear.x = curr_twist.x;
-        robot_twist.linear.y = curr_twist.y;
-        robot_twist.angular.z = curr_twist.omega;
+        // // geometry_msgs::msg::Quaternion robot_quaternion;
+        // // tf2::convert(tf2_robot_quaternion, robot_quaternion);
+        // robot_pose.orientation.x = tf2_robot_quaternion.x();
+        // robot_pose.orientation.y = tf2_robot_quaternion.y();
+        // robot_pose.orientation.z = tf2_robot_quaternion.z();
+        // robot_pose.orientation.w = tf2_robot_quaternion.w();
 
-        // Combine different components into the odometry message
-        odom_msg.pose.pose = robot_pose;
-        odom_msg.twist.twist = robot_twist;
-        odom_pub->publish(odom_msg);
+        // // Retrieve the current twist of the robot and fill in twist message information
+        // Twist2D curr_twist = turtlebot.get_twist();
+        // geometry_msgs::msg::Twist robot_twist;
+        // robot_twist.linear.x = curr_twist.x;
+        // robot_twist.linear.y = curr_twist.y;
+        // robot_twist.angular.z = curr_twist.omega;
+
+        // // Combine different components into the odometry message
+        // odom_msg.pose.pose = robot_pose;
+        // odom_msg.twist.twist = robot_twist;
+        // odom_pub->publish(odom_msg);
 
         // Broadcast the TF from odom to body
         tf_odom_robot(turtlebot.get_position().translation().x,
@@ -292,6 +302,17 @@ private:
     bool params_double_unfilled()
     {
         return (wheel_radius == -1.0 || motor_cmd_max == -1.0 || track_width == -1.0 || motor_cmd_per_rad_sec == -1.0 || encoder_ticks_per_rad == -1.0);
+    }
+
+    double calc_angle_diff(double subtracted, double subtractor)
+    {
+        double diff = subtracted - subtractor;
+        if (diff > PI) {
+            diff -= 2 * PI;
+        } else if (diff < -PI) {
+            diff += 2 * PI;
+        }
+        return diff;
     }
 };
 

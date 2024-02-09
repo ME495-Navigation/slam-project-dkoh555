@@ -45,8 +45,8 @@ namespace turtlelib {
     void DiffDrive::normalize_robot_angles() {
         wheel_positions.right = normalize_angle(wheel_positions.right);
         wheel_positions.left = normalize_angle(wheel_positions.left);
-        Transform2D normalized_robot_position{robot_position.translation(),
-                                                normalize_angle(robot_position.rotation())};
+        // Transform2D normalized_robot_position{robot_position.translation(),
+        //                                         normalize_angle(robot_position.rotation())};
     }
     // DiffDrive functions
     void DiffDrive::forward_k(WheelPosition position_change) {

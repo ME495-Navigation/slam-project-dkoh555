@@ -51,11 +51,11 @@
                 <arg name="use_jsp" value="false"/>
             </include>
 
-            <node 
+            <!-- <node 
                 name="joint_state_publisher" 
                 pkg="joint_state_publisher"
                 exec="joint_state_publisher" >
-            </node>
+            </node> -->
         </group>
         
     </group>
