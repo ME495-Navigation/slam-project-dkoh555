@@ -127,6 +127,8 @@ public:
     rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(10)).transient_local();
     wall_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", qos);
     obs_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/obstacles", qos);
+    // Other publishers
+    sensor_data_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>("red/sensor_data", 100);
 
     //
     // SERVICE
@@ -160,6 +162,7 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wall_pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obs_pub;
   rclcpp::Subscription<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr wheel_cmd_sub;
+  rclcpp::Publisher<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_data_pub;
 
   //
   // Variables
@@ -196,7 +199,6 @@ private:
     WheelPosition wheel_change{right_vel / frequency, left_vel / frequency};
     turtlebot.forward_k(wheel_change);
 
-
     // RCLCPP_INFO(
     //         get_logger(), "left change: %f", left_vel / frequency);
     // RCLCPP_INFO(
@@ -211,6 +213,17 @@ private:
     x = turtlebot.get_position().translation().x;
     y = turtlebot.get_position().translation().y;
     theta = turtlebot.get_position().rotation();
+
+    // Update the sensor data
+    nuturtlebot_msgs::msg::SensorData sensor_msg;
+    sensor_msg.stamp = rclcpp::Clock().now();
+
+    // Convert these angles to encoder ticks
+    sensor_msg.right_encoder = turtlebot.get_wheels().right * encoder_ticks_per_rad;
+    sensor_msg.left_encoder = turtlebot.get_wheels().left * encoder_ticks_per_rad;
+
+    // Publish the sensor data
+    sensor_data_pub->publish(sensor_msg);
 
     // Transforms
     tf_world_robot(x, y, theta);
