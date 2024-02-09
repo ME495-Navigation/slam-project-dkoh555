@@ -52,6 +52,10 @@ class TurtleControlNode : public rclcpp::Node
       track_width = get_parameter("track_width").as_double();
 
       param_desc.description = "";
+      declare_parameter("motor_cmd_max", -1.0, param_desc);
+      motor_cmd_max = get_parameter("motor_cmd_max").as_double();
+
+      param_desc.description = "";
       declare_parameter("motor_cmd_per_rad_sec", -1.0, param_desc);
       motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();
 
@@ -111,7 +115,7 @@ class TurtleControlNode : public rclcpp::Node
     // Variables
     //
     double frequency;
-    double wheel_radius, track_width, motor_cmd_per_rad_sec, encoder_ticks_per_rad;
+    double wheel_radius, track_width, motor_cmd_max, motor_cmd_per_rad_sec, encoder_ticks_per_rad;
     bool fresh_cmd_vel_received, fresh_sensor_data_received;
 
     //
@@ -164,6 +168,9 @@ class TurtleControlNode : public rclcpp::Node
         // Convert the raw velocities to integers so that it's compatible with MCU ticks
         int mcu_left_vel = static_cast<int>(std::round(raw_left_vel));
         int mcu_right_vel = static_cast<int>(std::round(raw_right_vel));
+
+        mcu_left_vel = wrap_encoder_ticks(mcu_left_vel);
+        mcu_right_vel = wrap_encoder_ticks(mcu_right_vel);
 
         // Use these MCU velocities for a WheelCommands message and publish it
         nuturtlebot_msgs::msg::WheelCommands wheel_command;
@@ -270,7 +277,22 @@ class TurtleControlNode : public rclcpp::Node
 
     bool params_string_unfilled()
     {
-        return (wheel_radius == -1.0 || track_width == -1.0 || motor_cmd_per_rad_sec == -1.0 || encoder_ticks_per_rad == -1.0);
+        return (wheel_radius == -1.0 || motor_cmd_max == -1.0 || track_width == -1.0 || motor_cmd_per_rad_sec == -1.0 || encoder_ticks_per_rad == -1.0);
+    }
+
+    int wrap_encoder_ticks(int num_ticks)
+    {
+      int result = num_ticks;
+      if(num_ticks > motor_cmd_max)
+      {
+        result = motor_cmd_max;
+      }
+      else if (num_ticks < -motor_cmd_max)
+      {
+        result = -motor_cmd_max;
+      }
+      
+      return result;
     }
 
 };
