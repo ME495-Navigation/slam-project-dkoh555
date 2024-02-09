@@ -30,9 +30,9 @@
 
         <node pkg="nuturtle_control" exec="odometry">
             <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
-            <param name="body_id" value="red/body_link"/>
-            <param name="wheel_left" value="red/wheel_left_joint"/>
-            <param name="wheel_right" value="red/wheel_right_joint"/>
+            <param name="body_id" value="blue/base_link"/>
+            <param name="wheel_left" value="blue/wheel_left_joint"/>
+            <param name="wheel_right" value="blue/wheel_right_joint"/>
             <remap from="joint_states" to="red/joint_states" />
         </node>
 
@@ -40,6 +40,7 @@
             <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
             <remap from="joint_states" to="red/joint_states" />
             <remap from="wheel_cmd" to="red/wheel_cmd" />
+            <remap from="sensor_data" to="red/sensor_data" />
         </node>
 
         <group>
