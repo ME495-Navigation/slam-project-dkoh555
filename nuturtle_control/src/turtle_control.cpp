@@ -214,6 +214,16 @@ class TurtleControlNode : public rclcpp::Node
       double left_angle = ticks_to_rad(left_encoder);
       double right_angle = ticks_to_rad(right_encoder);
 
+      RCLCPP_INFO(
+              get_logger(), "encoder left: %d", left_encoder);
+      RCLCPP_INFO(
+              get_logger(), "encoder right: %d", right_encoder);
+
+      RCLCPP_INFO(
+              get_logger(), "angle left: %f", left_angle);
+      RCLCPP_INFO(
+              get_logger(), "angle right: %f", right_angle);
+
       // Fill the JointStates message with the relevant information
       sensor_msgs::msg::JointState robot_joint_states;
       robot_joint_states.header.stamp = received_sensordata.stamp;

@@ -64,6 +64,32 @@ public:
         declare_parameter("wheel_right", "UNUSED", param_desc);
         wheel_right = get_parameter("wheel_right").as_string();
 
+        param_desc.description = "";
+        declare_parameter("wheel_radius", -1.0, param_desc);
+        wheel_radius = get_parameter("wheel_radius").as_double();
+
+        param_desc.description = "";
+        declare_parameter("track_width", -1.0, param_desc);
+        track_width = get_parameter("track_width").as_double();
+
+        param_desc.description = "";
+        declare_parameter("motor_cmd_max", -1.0, param_desc);
+        motor_cmd_max = get_parameter("motor_cmd_max").as_double();
+
+        param_desc.description = "";
+        declare_parameter("motor_cmd_per_rad_sec", -1.0, param_desc);
+        motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();
+
+        param_desc.description = "";
+        declare_parameter("encoder_ticks_per_rad", -1.0, param_desc);
+        encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_double();
+
+        if (params_double_unfilled())
+        {
+            RCLCPP_ERROR(this->get_logger(), "Required paramters not provided");
+            rclcpp::shutdown();
+        }
+
         if (params_string_unfilled())
         {
             RCLCPP_ERROR(this->get_logger(), "Required paramters not provided");
@@ -115,6 +141,7 @@ private:
     // Variables
     //
     double frequency;
+    double wheel_radius, track_width, motor_cmd_max, motor_cmd_per_rad_sec, encoder_ticks_per_rad;
     std::string body_id, odom_id, wheel_left, wheel_right;
 
     //
@@ -136,8 +163,6 @@ private:
     //
     void joint_states_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
     {
-        std::cout << "TESTING!!!" << std::endl;
-
         // Note the received JointState message
         latest_joint_states = *msg;
 
@@ -255,12 +280,18 @@ private:
     void init_var()
     {
         // Initialize the diff drive robot
-        turtlebot = DiffDrive();
+        turtlebot = DiffDrive(wheel_radius, track_width);
     }
 
     bool params_string_unfilled()
     {
         return (body_id == "UNUSED" || wheel_left == "UNUSED" || wheel_right == "UNUSED");
+    }
+
+
+    bool params_double_unfilled()
+    {
+        return (wheel_radius == -1.0 || motor_cmd_max == -1.0 || track_width == -1.0 || motor_cmd_per_rad_sec == -1.0 || encoder_ticks_per_rad == -1.0);
     }
 };
 
