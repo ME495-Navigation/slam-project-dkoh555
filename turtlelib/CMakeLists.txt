@@ -52,32 +52,34 @@ endif()
 include(CTest)
 
 # Find the Unit testing framework. In this example, Catch2
-find_package(Catch2 3 REQUIRED)
+if(BUILD_TESTING)
+        find_package(Catch2 3 REQUIRED)
 
-# A test is just an executable that is linked against the unit testing library
-# Test for geometry2d.hpp
-add_executable(test_geometry2d tests/test_geometry2d.cpp)
-target_link_libraries(test_geometry2d ${PROJECT_NAME} Catch2::Catch2WithMain)
-# register the test with CTest, telling it what executable to run
-add_test(NAME Testing_Geometry2d COMMAND test_geometry2d)
+        # A test is just an executable that is linked against the unit testing library
+        # Test for geometry2d.hpp
+        add_executable(test_geometry2d tests/test_geometry2d.cpp)
+        target_link_libraries(test_geometry2d ${PROJECT_NAME} Catch2::Catch2WithMain)
+        # register the test with CTest, telling it what executable to run
+        add_test(NAME Testing_Geometry2d COMMAND test_geometry2d)
 
-# Test for se2d.cpp
-add_executable(test_se2d tests/test_se2d.cpp)
-target_link_libraries(test_se2d ${PROJECT_NAME} Catch2::Catch2WithMain)
-# register the test with CTest, telling it what executable to run
-add_test(NAME Testing_se2d COMMAND test_se2d)
+        # Test for se2d.cpp
+        add_executable(test_se2d tests/test_se2d.cpp)
+        target_link_libraries(test_se2d ${PROJECT_NAME} Catch2::Catch2WithMain)
+        # register the test with CTest, telling it what executable to run
+        add_test(NAME Testing_se2d COMMAND test_se2d)
 
-# Test for svg.cpp
-add_executable(test_svg tests/test_svg.cpp)
-target_link_libraries(test_svg ${PROJECT_NAME} Catch2::Catch2WithMain)
-# register the test with CTest, telling it what executable to run
-add_test(NAME Testing_svg COMMAND test_svg)
+        # Test for svg.cpp
+        add_executable(test_svg tests/test_svg.cpp)
+        target_link_libraries(test_svg ${PROJECT_NAME} Catch2::Catch2WithMain)
+        # register the test with CTest, telling it what executable to run
+        add_test(NAME Testing_svg COMMAND test_svg)
 
-# Test for diff_drive.cpp
-add_executable(test_diff_drive tests/test_diff_drive.cpp)
-target_link_libraries(test_diff_drive ${PROJECT_NAME} Catch2::Catch2WithMain)
-# register the test with CTest, telling it what executable to run
-add_test(NAME Testing_diff_drive COMMAND test_diff_drive)
+        # Test for diff_drive.cpp
+        add_executable(test_diff_drive tests/test_diff_drive.cpp)
+        target_link_libraries(test_diff_drive ${PROJECT_NAME} Catch2::Catch2WithMain)
+        # register the test with CTest, telling it what executable to run
+        add_test(NAME Testing_diff_drive COMMAND test_diff_drive)
+endif()
 
 #####################
 ## Install Library ##
