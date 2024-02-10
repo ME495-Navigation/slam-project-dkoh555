@@ -4,10 +4,10 @@
 
 # Package List
 This repository consists of several ROS packages
-- <nusim> - <one sentence description>
-- <nuturtle_control> - <one sentence description>
-- <nuturtle_description> - <one sentence description>
-- <turtlelib> - <one sentence description>
+- `nusim ` - Provides a simulated robot environment for the turtlebot
+- `nuturtle_control` -  Enables control of the turtlebot in real life or simulation
+- `nuturtle_description` - Visualizes a single or multiple turtlebots in rviz
+- `turtlelib` - Enables performing 2D rigid body transformations and other functionality
 
 # HW2
 Video submission for Physical Testing:
