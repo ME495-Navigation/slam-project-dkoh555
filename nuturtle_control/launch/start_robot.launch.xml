@@ -81,6 +81,14 @@
             <remap from="sensor_data" to="red/sensor_data" /> -->
         </node>
 
+        <node pkg="nuturtle_control" exec="odometry">
+            <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+            <param name="body_id" value="blue/base_footprint"/>
+            <param name="wheel_left" value="wheel_left_joint"/>
+            <param name="wheel_right" value="wheel_right_joint"/>
+            <remap from="joint_states" to="blue/joint_states" />
+        </node>
+
         <node pkg="tf2_ros"
             exec="static_transform_publisher"
             name="world_odom_broadcaster"
