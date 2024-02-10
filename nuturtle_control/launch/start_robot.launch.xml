@@ -30,7 +30,7 @@
 
         <node pkg="nuturtle_control" exec="odometry">
             <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
-            <param name="body_id" value="blue/base_link"/>
+            <param name="body_id" value="blue/base_footprint"/>
             <param name="wheel_left" value="blue/wheel_left_joint"/>
             <param name="wheel_right" value="blue/wheel_right_joint"/>
             <remap from="joint_states" to="red/joint_states" />
@@ -58,6 +58,14 @@
             </node> -->
         </group>
         
+    </group>
+
+    <group>
+        <push-ros-namespace namespace="blue"/>
+        <include file="$(find-pkg-share nuturtle_description)/launch/load_one.launch.py" >
+            <arg name="color" value="blue"/>
+            <arg name="use_rviz" value="false"/>
+        </include>
     </group>
 
     <node pkg="tf2_ros"

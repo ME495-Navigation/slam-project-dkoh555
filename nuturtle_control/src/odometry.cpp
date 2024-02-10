@@ -187,42 +187,42 @@ private:
         //  RCLCPP_INFO(
         //       get_logger(), "y: %f", turtlebot.get_position().translation().y);
 
-        // // Publish the corresponding odometry message
-        // // Initialize the odometry message
-        // nav_msgs::msg::Odometry odom_msg;
-        // odom_msg.header.stamp = latest_joint_states.header.stamp;
-        // odom_msg.header.frame_id = odom_id;
-        // odom_msg.child_frame_id = body_id;
+        // Publish the corresponding odometry message
+        // Initialize the odometry message
+        nav_msgs::msg::Odometry odom_msg;
+        odom_msg.header.stamp = latest_joint_states.header.stamp;
+        odom_msg.header.frame_id = odom_id;
+        odom_msg.child_frame_id = body_id;
 
-        // // Fill in the positional information
-        // geometry_msgs::msg::Pose robot_pose;
-        // robot_pose.position.x = turtlebot.get_position().translation().x;
-        // robot_pose.position.y = turtlebot.get_position().translation().y;
+        // Fill in the positional information
+        geometry_msgs::msg::Pose robot_pose;
+        robot_pose.position.x = turtlebot.get_position().translation().x;
+        robot_pose.position.y = turtlebot.get_position().translation().y;
 
-        // // Use a tf2 object and function to convert roll pitch yaw into quaternion
-        // tf2::Quaternion tf2_robot_quaternion;
-        // tf2_robot_quaternion.setRPY(0.0, 0.0, turtlebot.get_position().rotation());
-        // // tf2_robot_quaternion.normalize(); // Ensure the quaternion's magnitude is 1
-        // // Then convert that tf2 quaternion into a suitable quaternion message
+        // Use a tf2 object and function to convert roll pitch yaw into quaternion
+        tf2::Quaternion tf2_robot_quaternion;
+        tf2_robot_quaternion.setRPY(0.0, 0.0, turtlebot.get_position().rotation());
+        // tf2_robot_quaternion.normalize(); // Ensure the quaternion's magnitude is 1
+        // Then convert that tf2 quaternion into a suitable quaternion message
 
-        // // geometry_msgs::msg::Quaternion robot_quaternion;
-        // // tf2::convert(tf2_robot_quaternion, robot_quaternion);
-        // robot_pose.orientation.x = tf2_robot_quaternion.x();
-        // robot_pose.orientation.y = tf2_robot_quaternion.y();
-        // robot_pose.orientation.z = tf2_robot_quaternion.z();
-        // robot_pose.orientation.w = tf2_robot_quaternion.w();
+        // geometry_msgs::msg::Quaternion robot_quaternion;
+        // tf2::convert(tf2_robot_quaternion, robot_quaternion);
+        robot_pose.orientation.x = tf2_robot_quaternion.x();
+        robot_pose.orientation.y = tf2_robot_quaternion.y();
+        robot_pose.orientation.z = tf2_robot_quaternion.z();
+        robot_pose.orientation.w = tf2_robot_quaternion.w();
 
-        // // Retrieve the current twist of the robot and fill in twist message information
-        // Twist2D curr_twist = turtlebot.get_twist();
-        // geometry_msgs::msg::Twist robot_twist;
-        // robot_twist.linear.x = curr_twist.x;
-        // robot_twist.linear.y = curr_twist.y;
-        // robot_twist.angular.z = curr_twist.omega;
+        // Retrieve the current twist of the robot and fill in twist message information
+        Twist2D curr_twist = turtlebot.get_twist();
+        geometry_msgs::msg::Twist robot_twist;
+        robot_twist.linear.x = curr_twist.x;
+        robot_twist.linear.y = curr_twist.y;
+        robot_twist.angular.z = curr_twist.omega;
 
-        // // Combine different components into the odometry message
-        // odom_msg.pose.pose = robot_pose;
-        // odom_msg.twist.twist = robot_twist;
-        // odom_pub->publish(odom_msg);
+        // Combine different components into the odometry message
+        odom_msg.pose.pose = robot_pose;
+        odom_msg.twist.twist = robot_twist;
+        odom_pub->publish(odom_msg);
 
         // Broadcast the TF from odom to body
         tf_odom_robot(turtlebot.get_position().translation().x,
