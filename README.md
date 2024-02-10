@@ -12,7 +12,9 @@ This repository consists of several ROS packages
 # HW2
 Video submission for Physical Testing:
 
-insert video
+
+[insert video](https://github.com/ME495-Navigation/slam-project-dkoh555/assets/107823507/db5c0faa-4461-432c-99fc-c29c8ed83429)
+
 
 The final odom position was x: 0.064997, y: -0.1335737
 
