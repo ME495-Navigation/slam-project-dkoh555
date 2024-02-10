@@ -109,7 +109,7 @@ private:
   {
     geometry_msgs::msg::Twist msg;
     msg.linear.x = linear_vel * pow(-1, is_reverse); // Additional power is to control the direction
-    msg.angular.z = angular_vel;
+    msg.angular.z = angular_vel * pow(-1, is_reverse);
     if(pub_active)
     {
       cmd_vel_pub->publish(msg);
