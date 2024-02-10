@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node name="turtle_control" pkg="nuturtle_control" exec="turtle_control">
+        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml" />
+    </node>
+
+    <catch2_integration_test_node
+    pkg='nuturtle_control'
+    exec='turtle_control_test'
+></catch2_integration_test_node>
+
+</launch>
