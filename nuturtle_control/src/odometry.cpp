@@ -15,6 +15,7 @@
 #include "nuturtlebot_msgs/msg/sensor_data.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "nav_msgs/msg/path.hpp"
 
 #include "turtlelib/diff_drive.hpp"
 #include "tf2/LinearMath/Quaternion.h"
@@ -110,6 +111,8 @@ public:
         // PUBLISHERS
         //
         odom_pub = create_publisher<nav_msgs::msg::Odometry>("odom", 100);
+        // Publishing the path taken
+        path_pub = create_publisher<nav_msgs::msg::Path>("nav_msgs/path", 100);
 
         //
         // SERVICE
@@ -136,6 +139,7 @@ private:
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub;
     rclcpp::Service<nusim::srv::Teleport>::SharedPtr initial_pose_srv;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
 
     //
     // Variables
@@ -149,6 +153,9 @@ private:
     //
     DiffDrive turtlebot;
     sensor_msgs::msg::JointState latest_joint_states;
+
+    // Vectors
+    std::vector<geometry_msgs::msg::PoseStamped> odom_path;
 
     //
     // TIMER CALLBACK
@@ -223,6 +230,13 @@ private:
         odom_msg.pose.pose = robot_pose;
         odom_msg.twist.twist = robot_twist;
         odom_pub->publish(odom_msg);
+
+        // Apply the Pose information to a PoseStamped msg
+        // and then append it to the odom_path vector
+        store_posestamped(odom_msg);
+
+        // Publish the path
+        odom_path_publish();
 
         // Broadcast the TF from odom to body
         tf_odom_robot(turtlebot.get_position().translation().x,
@@ -313,6 +327,43 @@ private:
             diff += 2 * PI;
         }
         return diff;
+    }
+
+    void store_posestamped(nav_msgs::msg::Odometry odom_msg)
+    {
+        geometry_msgs::msg::PoseStamped pose_stamp;
+
+        // Key info
+        pose_stamp.header = odom_msg.header;
+
+        // Position
+        pose_stamp.pose.position.x = odom_msg.pose.pose.position.x;
+        pose_stamp.pose.position.y = odom_msg.pose.pose.position.y;
+        pose_stamp.pose.position.z = odom_msg.pose.pose.position.z;
+
+        // Orientation
+        pose_stamp.pose.orientation.x = odom_msg.pose.pose.orientation.x;
+        pose_stamp.pose.orientation.y = odom_msg.pose.pose.orientation.y;
+        pose_stamp.pose.orientation.z = odom_msg.pose.pose.orientation.z;
+        pose_stamp.pose.orientation.w = odom_msg.pose.pose.orientation.w;
+
+        // Append it to robot_path vector
+        odom_path.push_back(pose_stamp);
+    }
+
+    void odom_path_publish()
+    {
+        nav_msgs::msg::Path msg;
+
+        // Key info
+        msg.header.stamp = rclcpp::Clock().now();
+        msg.header.frame_id = odom_id;
+
+        // Vector of Poses
+        msg.poses = odom_path;
+
+        // Publish the path trace
+        path_pub->publish(msg);
     }
 };
 

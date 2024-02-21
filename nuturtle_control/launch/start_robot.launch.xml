@@ -28,6 +28,7 @@
         <node pkg="nusim" exec="nusim">
             <param from="$(find-pkg-share nusim)/config/basic_world.yaml"/>
             <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+            <remap from="nav_msgs/path" to="red/nav_msgs/path" />
         </node>
 
         <node pkg="nuturtle_control" exec="odometry">
@@ -36,6 +37,7 @@
             <param name="wheel_left" value="wheel_left_joint"/>
             <param name="wheel_right" value="wheel_right_joint"/>
             <remap from="joint_states" to="blue/joint_states" />
+            <remap from="nav_msgs/path" to="blue/nav_msgs/path" />
         </node>
 
         <node pkg="nuturtle_control" exec="turtle_control">
@@ -87,6 +89,7 @@
             <param name="wheel_left" value="wheel_left_joint"/>
             <param name="wheel_right" value="wheel_right_joint"/>
             <remap from="joint_states" to="blue/joint_states" />
+            <remap from="nav_msgs/path" to="blue/nav_msgs/path" />
         </node>
 
         <node pkg="tf2_ros"
@@ -102,6 +105,8 @@
                     --qz 0.0 
                     --qw 1.0"/>
 
+        <!-- Run the laser scanner publisher launchfile
+        <include file="$(find-pkg-share hld_lfcd_lds_driver)/launch/hlds_laser.launch"/> -->
     </group>
 
     <!--  -->
