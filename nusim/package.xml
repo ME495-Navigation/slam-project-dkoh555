@@ -21,6 +21,7 @@
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
   <depend>nuturtlebot_msgs</depend>
+  <depend>nav_msgs</depend>
 
   <depend>turtlelib</depend>
   

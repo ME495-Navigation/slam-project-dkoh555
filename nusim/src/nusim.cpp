@@ -45,6 +45,7 @@
 #include "std_msgs/msg/u_int64.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "nusim/srv/teleport.hpp"
+#include "nav_msgs/msg/path.hpp"
 
 #include "turtlelib/diff_drive.hpp"
 
@@ -127,8 +128,10 @@ public:
     rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(10)).transient_local();
     wall_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", qos);
     obs_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/obstacles", qos);
-    // Other publishers
+    // Publishing sensor data
     sensor_data_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>("red/sensor_data", 100);
+    // Publishing the path taken
+    path_pub = create_publisher<nav_msgs::msg::Path>("nav_msgs/path", 100);
 
     //
     // SERVICE
@@ -163,6 +166,7 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obs_pub;
   rclcpp::Subscription<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr wheel_cmd_sub;
   rclcpp::Publisher<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_data_pub;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
 
   //
   // Variables
@@ -182,6 +186,9 @@ private:
   //
   DiffDrive turtlebot;
   WheelPosition wheel_change;
+
+  // Vectors
+  std::vector<geometry_msgs::msg::PoseStamped> robot_path;
 
   //
   // TIMER CALLBACK
@@ -227,6 +234,9 @@ private:
 
     // Transforms
     tf_world_robot(x, y, theta);
+
+    // Navigtaion Path
+    nav_path_publish();
 
     // World objects
     wall_broadcast();
@@ -297,8 +307,45 @@ private:
     msg.transform.rotation.z = quat.z();
     msg.transform.rotation.w = quat.w();
 
+    // Apply the same transformations to a PoseStamped msg
+    // and then append it to the robot_path vector
+    geometry_msgs::msg::PoseStamped pose_stamp;
+
+    // Key info
+    pose_stamp.header = msg.header;
+    
+    // Position
+    pose_stamp.pose.position.x = msg.transform.translation.x;
+    pose_stamp.pose.position.y = msg.transform.translation.y;
+    pose_stamp.pose.position.z = msg.transform.translation.z;
+
+    // Orientation
+    pose_stamp.pose.orientation.x = msg.transform.rotation.x;
+    pose_stamp.pose.orientation.y = msg.transform.rotation.y;
+    pose_stamp.pose.orientation.z = msg.transform.rotation.z;
+    pose_stamp.pose.orientation.w = msg.transform.rotation.w;
+
+    // Append it to robot_path vector
+    robot_path.push_back(pose_stamp);
+
     // Broadcast transform
     tf_broadcaster->sendTransform(msg);
+  }
+
+  // Publish the robot path trace
+  void nav_path_publish()
+  {
+    nav_msgs::msg::Path msg;
+
+    // Key info
+    msg.header.stamp = rclcpp::Clock().now();
+    msg.header.frame_id = "nusim/world";
+
+    // Vector of Poses
+    msg.poses = robot_path;
+
+    // Publish the path trace
+    path_pub->publish(msg);
   }
 
   // Broadcasts world's walls

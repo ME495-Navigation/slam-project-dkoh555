@@ -20,6 +20,7 @@ find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(turtlelib REQUIRED)
 find_package(nuturtlebot_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 ###############
 ## Interface ##
@@ -40,7 +41,7 @@ ament_export_dependencies(rclcpp geometry_msgs
   sensor_msgs std_msgs std_srvs)
 
 set(NUSIM_AMENT_TARGET_DEPENDENCIES
-  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs tf2 tf2_ros visualization_msgs nuturtlebot_msgs
+  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs tf2 tf2_ros visualization_msgs nuturtlebot_msgs nav_msgs
 )
 set(NUSIM_TARGET_LINK_LIBRARIES
   yaml-cpp
