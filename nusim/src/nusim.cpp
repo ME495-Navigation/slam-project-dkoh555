@@ -25,7 +25,8 @@
 ///  `~/obstacles/r (double) [default "0.75"]`      - Radius of all obstacles
 
 #include "rclcpp/rclcpp.hpp"
-#include "param_lib.cpp"
+#include "nusim/param_lib.hpp"
+#include "nusim/random_num_generator.hpp"
 #include <string>
 #include <cmath>
 #include "yaml-cpp/yaml.h"
@@ -53,7 +54,6 @@ using std::string;
 using namespace turtlelib;
 
 using namespace std::chrono_literals;
-using namespace rosnu;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -69,15 +69,17 @@ public:
     // PARAMETERS
     //
     // Frequency of timer
-    frequency = declare_and_get_param<double>("frequency", 200.0f, *this, "Frequency of node timer");
-    x0 = declare_and_get_param<double>("x", 0.0f, *this, "Starting x coord of robot");
-    y0 = declare_and_get_param<double>("y", 0.0f, *this, "Starting y coord of robot");
-    theta0 = declare_and_get_param<double>("theta", 0.0f, *this, "Starting directional angle of robot");
-    arena_x_length = declare_and_get_param<double>("arena_x_length", 5.0f, *this, "x length of arena");
-    arena_y_length = declare_and_get_param<double>("arena_y_length", 5.0f, *this, "y length of arena");
-    obx_arr = declare_and_get_param<std::vector<double>>("obstacles/x", std::vector<double>{}, *this, "x coords of each obstacles");
-    oby_arr = declare_and_get_param<std::vector<double>>("obstacles/y", std::vector<double>{}, *this, "y coords of each obstacles");
-    obr = declare_and_get_param<double>("obstacles/r", 0.75f, *this, "Radius of all obstacles");
+    frequency = rosnu::declare_and_get_param<double>("frequency", 200.0f, *this, "Frequency of node timer");
+    x0 = rosnu::declare_and_get_param<double>("x", 0.0f, *this, "Starting x coord of robot");
+    y0 = rosnu::declare_and_get_param<double>("y", 0.0f, *this, "Starting y coord of robot");
+    theta0 = rosnu::declare_and_get_param<double>("theta", 0.0f, *this, "Starting directional angle of robot");
+    arena_x_length = rosnu::declare_and_get_param<double>("arena_x_length", 5.0f, *this, "x length of arena");
+    arena_y_length = rosnu::declare_and_get_param<double>("arena_y_length", 5.0f, *this, "y length of arena");
+    obx_arr = rosnu::declare_and_get_param<std::vector<double>>("obstacles/x", std::vector<double>{}, *this, "x coords of each obstacles");
+    oby_arr = rosnu::declare_and_get_param<std::vector<double>>("obstacles/y", std::vector<double>{}, *this, "y coords of each obstacles");
+    obr = rosnu::declare_and_get_param<double>("obstacles/r", 0.75f, *this, "Radius of all obstacles");
+    input_noise = rosnu::declare_and_get_param<double>("input_noise", 0.1f, *this, "The amount of noise the sensor receives");
+    slip_fraction = rosnu::declare_and_get_param<double>("slip_fraction", 0.1f, *this, "The amount of slipping that the wheels encounter");
 
     auto param_desc = rcl_interfaces::msg::ParameterDescriptor{}; // Prepare for parameter descriptions
 
@@ -180,12 +182,16 @@ private:
   double obr;
   double wheel_radius, track_width, motor_cmd_per_rad_sec, encoder_ticks_per_rad;
   double left_vel, right_vel;
+  double input_noise;
+  double slip_fraction;
 
   //
   // Objects
   //
   DiffDrive turtlebot;
   WheelPosition wheel_change;
+  std::normal_distribution<> noise_generator;
+  std::uniform_real_distribution<> slip_generator;
 
   // Vectors
   std::vector<geometry_msgs::msg::PoseStamped> robot_path;
@@ -202,8 +208,12 @@ private:
     timestep_pub->publish(new_msg);
     timestep += 1;
 
-    // Note change in WheelPosition, and run it through forward_k
-    WheelPosition wheel_change{right_vel / frequency, left_vel / frequency};
+    // Calculate the new wheel positions due to velocity,
+    // also apply uniform random noise to each wheel velocity
+    auto right_pos = (right_vel * (1 + slip_generator(num_generator::get_random()))) / frequency;
+    auto left_pos = (left_vel * (1 + slip_generator(num_generator::get_random()))) / frequency;
+    // Note changes in WheelPosition, and run it through forward_k
+    WheelPosition wheel_change{right_pos, left_pos};
     turtlebot.forward_k(wheel_change);
 
     // RCLCPP_INFO(
@@ -262,6 +272,17 @@ private:
     // Convert them into wheel velocities
     left_vel = left_mcu * motor_cmd_per_rad_sec;
     right_vel = right_mcu * motor_cmd_per_rad_sec;
+
+    // Add noise in form of a gaussian random variable to the wheel velocities for simulation purposes,
+    // but if the velocity is 0 we'll leave it untouched because we're confident in that
+    if(left_vel != 0.0)
+    {
+      left_vel += noise_generator(num_generator::get_random());
+    }
+    if(right_vel != 0.0)
+    {
+      right_vel += noise_generator(num_generator::get_random());
+    }
   }
 
   //
@@ -436,6 +457,13 @@ private:
 
     // Initialize the turtlebot
     turtlebot = DiffDrive(wheel_radius, track_width, Transform2D(Vector2D{x, y}, theta), WheelPosition()); 
+
+    // Generate a noise gaussian variable
+    noise_generator = std::normal_distribution<>{0, input_noise};
+
+    // Generate a uniform random variable
+    slip_generator = std::uniform_real_distribution<>{-slip_fraction, slip_fraction};
+
   }
 
   bool params_string_unfilled()
