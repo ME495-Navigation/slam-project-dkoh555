@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /TF1/Frames1
       Splitter Ratio: 0.5
     Tree Height: 719
   - Class: rviz_common/Selection
@@ -231,6 +232,18 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
+        Value: /nusim/obstacles
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Walls
+      Namespaces:
+        "": true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
         Value: /nusim/walls
       Value: true
     - Class: rviz_default_plugins/MarkerArray
@@ -243,7 +256,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /nusim/obstacles
+        Value: /nusim/fake_sensor
       Value: true
     - Class: rviz_default_plugins/TF
       Enabled: true
@@ -251,19 +264,19 @@ Visualization Manager:
       Frames:
         All Enabled: false
         blue/base_footprint:
-          Value: true
+          Value: false
         blue/base_link:
-          Value: true
+          Value: false
         blue/base_scan:
-          Value: true
+          Value: false
         blue/caster_back_link:
-          Value: true
+          Value: false
         blue/imu_link:
-          Value: true
+          Value: false
         blue/wheel_left_link:
-          Value: true
+          Value: false
         blue/wheel_right_link:
-          Value: true
+          Value: false
         nusim/world:
           Value: true
         odom:
@@ -362,16 +375,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 12.337502479553223
+      Distance: 11.309186935424805
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1.4048755168914795
-        Y: 4.710497856140137
-        Z: -3.2279469966888428
+        X: 0.13863903284072876
+        Y: 5.469361782073975
+        Z: -2.901402711868286
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false

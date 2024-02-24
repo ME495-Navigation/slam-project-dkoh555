@@ -78,8 +78,9 @@ public:
     obx_arr = rosnu::declare_and_get_param<std::vector<double>>("obstacles/x", std::vector<double>{}, *this, "x coords of each obstacles");
     oby_arr = rosnu::declare_and_get_param<std::vector<double>>("obstacles/y", std::vector<double>{}, *this, "y coords of each obstacles");
     obr = rosnu::declare_and_get_param<double>("obstacles/r", 0.75f, *this, "Radius of all obstacles");
-    input_noise = rosnu::declare_and_get_param<double>("input_noise", 0.1f, *this, "The amount of noise the sensor receives");
-    slip_fraction = rosnu::declare_and_get_param<double>("slip_fraction", 0.1f, *this, "The amount of slipping that the wheels encounter");
+    input_noise = rosnu::declare_and_get_param<double>("input_noise", 0.2f, *this, "The amount of noise the sensor receives");
+    slip_fraction = rosnu::declare_and_get_param<double>("slip_fraction", 0.2f, *this, "The amount of slipping that the wheels encounter");
+    basic_sensor_variance = rosnu::declare_and_get_param<double>("basic_sensor_variance", 0.01f, *this, "The amount of slipping that the wheels encounter");
 
     auto param_desc = rcl_interfaces::msg::ParameterDescriptor{}; // Prepare for parameter descriptions
 
@@ -187,14 +188,16 @@ private:
   double input_noise;
   double slip_fraction;
   rclcpp::Time start_period;
+  double basic_sensor_variance;
 
   //
   // Objects
   //
   DiffDrive turtlebot;
   WheelPosition wheel_change;
-  std::normal_distribution<> noise_generator;
-  std::uniform_real_distribution<> slip_generator;
+  std::normal_distribution<> input_noise_generator;
+  std::uniform_real_distribution<> slip_noise_generator;
+  std::normal_distribution<> obstacle_noise_generator;
 
   // Vectors
   std::vector<geometry_msgs::msg::PoseStamped> robot_path;
@@ -213,8 +216,8 @@ private:
 
     // Calculate the new wheel positions due to velocity,
     // also apply uniform random noise to each wheel velocity
-    auto right_pos = (right_vel * (1 + slip_generator(num_generator::get_random()))) / frequency;
-    auto left_pos = (left_vel * (1 + slip_generator(num_generator::get_random()))) / frequency;
+    auto right_pos = (right_vel * (1 + slip_noise_generator(num_generator::get_random()))) / frequency;
+    auto left_pos = (left_vel * (1 + slip_noise_generator(num_generator::get_random()))) / frequency;
     // Note changes in WheelPosition, and run it through forward_k
     WheelPosition wheel_change{right_pos, left_pos};
     turtlebot.forward_k(wheel_change);
@@ -260,7 +263,7 @@ private:
     rclcpp::Time end_period = rclcpp::Clock().now();
     if((end_period - start_period) >= rclcpp::Duration(0,2e08))
     {
-      RCLCPP_INFO_STREAM(get_logger(), "It works!");
+      fake_sensor_broadcast();
       start_period = end_period;
     }
   }
@@ -289,11 +292,11 @@ private:
     // but if the velocity is 0 we'll leave it untouched because we're confident in that
     if(left_vel != 0.0)
     {
-      left_vel += noise_generator(num_generator::get_random());
+      left_vel += input_noise_generator(num_generator::get_random());
     }
     if(right_vel != 0.0)
     {
-      right_vel += noise_generator(num_generator::get_random());
+      right_vel += input_noise_generator(num_generator::get_random());
     }
   }
 
@@ -381,6 +384,10 @@ private:
     path_pub->publish(msg);
   }
 
+  //
+  // MARKER FUNCTIONS
+  //
+
   // Broadcasts world's walls
   void wall_broadcast()
   {
@@ -457,6 +464,35 @@ private:
     obs_pub->publish(obs_array);
   }
 
+  void fake_sensor_broadcast()
+  {
+    visualization_msgs::msg::MarkerArray obs_array;
+    for (size_t i = 0; i < obx_arr.size(); i++) {
+      visualization_msgs::msg::Marker obs;
+      obs.header.stamp = rclcpp::Clock().now();
+      obs.header.frame_id = "nusim/world";
+      obs.id = i;
+      obs.type = 3;
+      obs.action = 0;
+
+      obs.color.r = 0.0;
+      obs.color.g = 0.0;
+      obs.color.b = 1.0;
+      obs.color.a = 1.0;
+
+      // Add in the Gaussian noise
+      obs.pose.position.x = this->obx_arr[i] + obstacle_noise_generator(num_generator::get_random());
+      obs.pose.position.y = this->oby_arr[i] + obstacle_noise_generator(num_generator::get_random());
+      obs.pose.position.z = 0.125;
+      obs.scale.x = this->obr * 2;
+      obs.scale.y = this->obr * 2;
+      obs.scale.z = 0.25;
+      obs_array.markers.push_back(obs);
+    }
+
+    fake_sensor_pub->publish(obs_array);
+  }
+
   //
   // HELPER FUNCTIONS
   //
@@ -471,10 +507,13 @@ private:
     turtlebot = DiffDrive(wheel_radius, track_width, Transform2D(Vector2D{x, y}, theta), WheelPosition()); 
 
     // Generate a noise gaussian variable
-    noise_generator = std::normal_distribution<>{0, input_noise};
+    input_noise_generator = std::normal_distribution<>{0, input_noise};
 
-    // Generate a uniform random variable
-    slip_generator = std::uniform_real_distribution<>{-slip_fraction, slip_fraction};
+    // Generate a slip uniform random variable
+    slip_noise_generator = std::uniform_real_distribution<>{-slip_fraction, slip_fraction};
+
+    // Generate a noise gaussian variable
+    obstacle_noise_generator = std::normal_distribution<>{0, basic_sensor_variance};
 
     // Initialize a clock reading for tracking fake sensor data
     start_period = rclcpp::Clock().now();
