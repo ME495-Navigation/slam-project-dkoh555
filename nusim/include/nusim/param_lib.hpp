@@ -1,6 +1,7 @@
 #ifndef ROSNU_HELPERS_HPP
 #define ROSNU_HELPERS_HPP
 
+#include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "rcl_interfaces/msg/parameter_descriptor.hpp"
 

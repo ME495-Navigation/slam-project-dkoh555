@@ -62,6 +62,12 @@ ament_target_dependencies(nusim
 target_link_libraries(nusim
   ${NUSIM_TARGET_LINK_LIBRARIES}
 )
+target_include_directories(nusim
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 
 #############
 ## Install ##
