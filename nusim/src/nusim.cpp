@@ -126,10 +126,11 @@ public:
     //
     // Publishing the simulator's timestep count
     timestep_pub = this->create_publisher<std_msgs::msg::UInt64>("~/timestep", 100);
-    // Publishing the wall markers
+    // Publishing markers
     rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(10)).transient_local();
     wall_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", qos);
     obs_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/obstacles", qos);
+    fake_sensor_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/fake_sensor", qos);
     // Publishing sensor data
     sensor_data_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>("red/sensor_data", 100);
     // Publishing the path taken
@@ -166,6 +167,7 @@ private:
   rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_srv;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wall_pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obs_pub;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr fake_sensor_pub;
   rclcpp::Subscription<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr wheel_cmd_sub;
   rclcpp::Publisher<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_data_pub;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
@@ -184,6 +186,7 @@ private:
   double left_vel, right_vel;
   double input_noise;
   double slip_fraction;
+  rclcpp::Time start_period;
 
   //
   // Objects
@@ -251,6 +254,15 @@ private:
     // World objects
     wall_broadcast();
     obstacle_broadcast();
+
+    // Need to check if a time period of 1/5 HZ passed to then
+    // publish fake sensor data
+    rclcpp::Time end_period = rclcpp::Clock().now();
+    if((end_period - start_period) >= rclcpp::Duration(0,2e08))
+    {
+      RCLCPP_INFO_STREAM(get_logger(), "It works!");
+      start_period = end_period;
+    }
   }
 
   //
@@ -298,7 +310,7 @@ private:
     x = request->x;
     y = request->y;
     theta = request->theta;
-    RCLCPP_INFO_STREAM(get_logger(), "Teleporting to [x:" << x << " y:" << y << " theta:" << theta << "]");
+    // RCLCPP_INFO_STREAM(get_logger(), "Teleporting to [x:" << x << " y:" << y << " theta:" << theta << "]");
     response->success = true;
   }
 
@@ -463,6 +475,9 @@ private:
 
     // Generate a uniform random variable
     slip_generator = std::uniform_real_distribution<>{-slip_fraction, slip_fraction};
+
+    // Initialize a clock reading for tracking fake sensor data
+    start_period = rclcpp::Clock().now();
 
   }
 
