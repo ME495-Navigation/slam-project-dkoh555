@@ -80,7 +80,8 @@ public:
     obr = rosnu::declare_and_get_param<double>("obstacles/r", 0.75f, *this, "Radius of all obstacles");
     input_noise = rosnu::declare_and_get_param<double>("input_noise", 0.2f, *this, "The amount of noise the sensor receives");
     slip_fraction = rosnu::declare_and_get_param<double>("slip_fraction", 0.2f, *this, "The amount of slipping that the wheels encounter");
-    basic_sensor_variance = rosnu::declare_and_get_param<double>("basic_sensor_variance", 0.01f, *this, "The amount of slipping that the wheels encounter");
+    basic_sensor_variance = rosnu::declare_and_get_param<double>("basic_sensor_variance", 0.01f, *this, "The amount of noise for sensor data");
+    max_range = rosnu::declare_and_get_param<double>("max_range", 4.0f, *this, "The sensor range for the simulated robot");
 
     auto param_desc = rcl_interfaces::msg::ParameterDescriptor{}; // Prepare for parameter descriptions
 
@@ -189,6 +190,7 @@ private:
   double slip_fraction;
   rclcpp::Time start_period;
   double basic_sensor_variance;
+  double max_range;
 
   //
   // Objects
@@ -473,7 +475,15 @@ private:
       obs.header.frame_id = "nusim/world";
       obs.id = i;
       obs.type = 3;
-      obs.action = 0;
+      // Check if the object is within the sensor range, if so add it, if not delete it
+      if(in_range(x, y, this->obx_arr[i], this->oby_arr[i], max_range))
+      {
+        obs.action = 0;
+      }
+      else
+      {
+        obs.action = 2;
+      }
 
       obs.color.r = 0.0;
       obs.color.g = 0.0;
@@ -523,6 +533,12 @@ private:
   bool params_string_unfilled()
   {
       return (wheel_radius == -1.0 || track_width == -1.0 || motor_cmd_per_rad_sec == -1.0 || encoder_ticks_per_rad == -1.0);
+  }
+
+  bool in_range(double x1, double y1, double x2, double y2, bool radius)
+  {
+    double distance_sqrd = std::pow(x2 - x1, 2) + std::pow(y2 - y1, 2);
+    return distance_sqrd < std::pow(radius, 2);
   }
 
 };
