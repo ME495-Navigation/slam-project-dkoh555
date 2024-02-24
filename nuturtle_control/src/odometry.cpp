@@ -177,10 +177,10 @@ private:
         WheelPosition curr_wheel_position{latest_joint_states.position[1], latest_joint_states.position[0]};
         WheelPosition old_wheel_position = turtlebot.get_wheels();
 
-        RCLCPP_INFO(
-              get_logger(), "curr_left: %f", curr_wheel_position.left);
-        RCLCPP_INFO(
-              get_logger(), "curr_right: %f", curr_wheel_position.right);
+        // RCLCPP_INFO(
+        //       get_logger(), "curr_left: %f", curr_wheel_position.left);
+        // RCLCPP_INFO(
+        //       get_logger(), "curr_right: %f", curr_wheel_position.right);
 
         // Note the change in WheelPosition
         WheelPosition delta_wheel_position{calc_angle_diff(curr_wheel_position.right, old_wheel_position.right),

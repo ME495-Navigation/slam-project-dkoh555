@@ -252,8 +252,8 @@ class TurtleControlNode : public rclcpp::Node
         // Noted that the first SensorData message was received
         fresh_sensor_data_received = true;
 
-        RCLCPP_INFO(
-              get_logger(), "TRIGGERED");
+        // RCLCPP_INFO(
+        //       get_logger(), "TRIGGERED");
         
         // THIS CONDITION IS ALSO GOOD
       }
@@ -279,10 +279,10 @@ class TurtleControlNode : public rclcpp::Node
         // THIS CONDITION IS GOOD
       }
 
-        RCLCPP_INFO(
-              get_logger(), "msg.angle left: %f", robot_joint_states.position[0]);
-        RCLCPP_INFO(
-              get_logger(), "msg.angle right: %f", robot_joint_states.position[1]);
+        // RCLCPP_INFO(
+        //       get_logger(), "msg.angle left: %f", robot_joint_states.position[0]);
+        // RCLCPP_INFO(
+        //       get_logger(), "msg.angle right: %f", robot_joint_states.position[1]);
 
       // Publish the JointState
       joint_states_pub->publish(robot_joint_states);
