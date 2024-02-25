@@ -81,7 +81,7 @@ public:
     input_noise = rosnu::declare_and_get_param<double>("input_noise", 0.2f, *this, "The amount of noise the sensor receives");
     slip_fraction = rosnu::declare_and_get_param<double>("slip_fraction", 0.2f, *this, "The amount of slipping that the wheels encounter");
     basic_sensor_variance = rosnu::declare_and_get_param<double>("basic_sensor_variance", 0.01f, *this, "The amount of noise for sensor data");
-    max_range = rosnu::declare_and_get_param<double>("max_range", 4.0f, *this, "The sensor range for the simulated robot");
+    max_range = rosnu::declare_and_get_param<double>("max_range", 1.0f, *this, "The sensor range for the simulated robot");
 
     auto param_desc = rcl_interfaces::msg::ParameterDescriptor{}; // Prepare for parameter descriptions
 
@@ -101,7 +101,11 @@ public:
     declare_parameter("encoder_ticks_per_rad", -1.0, param_desc);
     encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_double();
 
-    if (params_string_unfilled())
+    param_desc.description = "";
+    declare_parameter("collision_radius", -1.0, param_desc);
+    collision_radius = get_parameter("collision_radius").as_double();
+
+    if (params_unfilled())
     {
         RCLCPP_ERROR(this->get_logger(), "Required paramters not provided");
         rclcpp::shutdown();
@@ -184,7 +188,7 @@ private:
   double arena_x_length, arena_y_length; // World dimensions
   std::vector<double> obx_arr, oby_arr; // Obstacle coords
   double obr;
-  double wheel_radius, track_width, motor_cmd_per_rad_sec, encoder_ticks_per_rad;
+  double wheel_radius, track_width, motor_cmd_per_rad_sec, encoder_ticks_per_rad, collision_radius;
   double left_vel, right_vel;
   double input_noise;
   double slip_fraction;
@@ -238,6 +242,9 @@ private:
     x = turtlebot.get_position().translation().x;
     y = turtlebot.get_position().translation().y;
     theta = turtlebot.get_position().rotation();
+
+    // Check for collisions between robot and obstacles and correct robot position accordingly
+    collision_update();
 
     // Update the sensor data
     nuturtlebot_msgs::msg::SensorData sensor_msg;
@@ -503,6 +510,57 @@ private:
     fake_sensor_pub->publish(obs_array);
   }
 
+  void collision_update()
+  {
+    // Iterate through each obstacle, and check if robot has collided with it
+    for (size_t i = 0; i < obx_arr.size(); i++) {
+      // If robot and obstacle collide, then adjust its position so that both
+      // objects' collision circles are tangent to each other
+      if(in_range(x, y, this->obx_arr[i], this->oby_arr[i], collision_radius + obr))
+      {
+        // RCLCPP_INFO_STREAM(
+        //         get_logger(), "Colliding");
+
+        // RCLCPP_INFO_STREAM(
+        //         get_logger(), "collision rad: " << collision_radius << " obr: " << obr);
+
+        // RCLCPP_INFO_STREAM(
+        //         get_logger(), "overall_collision_rad: " << collision_radius + obr);
+
+        // RCLCPP_INFO_STREAM(
+        //         get_logger(), "x: " << x << " y: " << y);
+
+        // RCLCPP_INFO_STREAM(
+        //         get_logger(), "obj_x: " << this->obx_arr[i] << " obj_y: " << this->oby_arr[i]);
+
+        // RCLCPP_INFO_STREAM(
+        //         get_logger(), "in_range_rad_sqrd: " << std::pow(collision_radius + obr, 2));
+        
+        // RCLCPP_INFO_STREAM(
+        //         get_logger(), "distance_sqrd: "<< (std::pow(x - this->obx_arr[i], 2) + std::pow(y - this->oby_arr[i], 2)));
+
+        // Find location of tangent_point between robot and obstacle collision circles along the 'path between both objects'.
+        // Find the vector from the obstacle frame to the robot's current position
+        auto curr_diff_x = x - this->obx_arr[i];
+        auto curr_diff_y = y - this->oby_arr[i];
+        // Convert it to a unit vector
+        auto old_mag = std::sqrt(std::pow(curr_diff_x, 2) + std::pow(curr_diff_y, 2));
+        auto unit_diff_x = curr_diff_x / old_mag;
+        auto unit_diff_y = curr_diff_y / old_mag;
+        // Adjust the magnitude of said vector so that the robot
+        // is the correct distance away from the obstacle center
+        auto new_mag_x = unit_diff_x * (collision_radius + obr);
+        auto new_mag_y = unit_diff_y * (collision_radius + obr);
+        // Adjust these tf coordinates of robot from obstacle from the obstacle frame to the world frame
+        x = this->obx_arr[i] + new_mag_x;
+        y = this->oby_arr[i] + new_mag_y;
+        // Ensure that these positions are also noted in nusim's turtlerobot object
+        Transform2D new_transform(Vector2D{x, y}, turtlebot.get_position().rotation());
+        turtlebot.set_transform(new_transform);
+      }
+    }
+  }
+
   //
   // HELPER FUNCTIONS
   //
@@ -530,12 +588,13 @@ private:
 
   }
 
-  bool params_string_unfilled()
+  bool params_unfilled()
   {
-      return (wheel_radius == -1.0 || track_width == -1.0 || motor_cmd_per_rad_sec == -1.0 || encoder_ticks_per_rad == -1.0);
+      return (wheel_radius == -1.0 || track_width == -1.0 || motor_cmd_per_rad_sec == -1.0 ||
+        encoder_ticks_per_rad == -1.0 || collision_radius == -1.0);
   }
 
-  bool in_range(double x1, double y1, double x2, double y2, bool radius)
+  bool in_range(double x1, double y1, double x2, double y2, double radius)
   {
     double distance_sqrd = std::pow(x2 - x1, 2) + std::pow(y2 - y1, 2);
     return distance_sqrd < std::pow(radius, 2);
