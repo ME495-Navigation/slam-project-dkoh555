@@ -286,6 +286,7 @@ private:
     if((end_period - start_period) >= rclcpp::Duration(0,2e08))
     {
       fake_sensor_broadcast();
+      fake_lidar_broadcast();
       start_period = end_period;
     }
   }
@@ -404,6 +405,77 @@ private:
 
     // Publish the path trace
     path_pub->publish(msg);
+  }
+
+  //
+  // PUBLISHER FUNCTIONS
+  //
+  void fake_lidar_broadcast()
+  {
+    // Find the total number of measurements involved in one scan (dependent on angle increment parameter)
+    const auto num_measurements_raw = 360.0/lidar_angle_incr;
+    const auto num_measurement = static_cast<int>(num_measurements_raw);
+    // Iterate through every measurement
+    for (int i = 0; i < num_measurement; i++)
+    {
+      // Initialize the lidar range value for that measurement
+      const double lidar_range = 0.0;
+
+      // For this measurement and its angle,
+      // Find the min and max range points tfs relative to the robot frame
+      // tf of robot to direction of min range point
+      const Transform2D tf_r_min_theta(i * lidar_angle_incr);
+      // tf of direction of min range point to the min range point
+      const Transform2D tf_min_theta_min(Vector2D{min_lidar_range, 0.0});
+      // tf of robot to min range point
+      const Transform2D tf_r_min = tf_r_min_theta * tf_min_theta_min;
+      // tf of min range point to max range point
+      const Transform2D tf_min_max(Vector2D{max_lidar_range - min_lidar_range, 0.0});
+      // tf of robot to max range point
+      const Transform2D tf_r_max = tf_r_min * tf_min_max;
+
+      // Iterate through each obstacle in the world
+      for (size_t i = 0; i < obx_arr.size(); i++)
+      {
+        const auto obx = this->obx_arr[i];
+        const auto oby = this->oby_arr[i];
+        // Find the min and max range point tfs relative to the obstacle,
+        // tf of object to world
+        const Transform2D tf_ob_world(Vector2D{-obx, -oby});
+        // tf of obstacle to min range point (object to world -> world to robot -> robot to min range point)
+        const Transform2D tf_ob_min = tf_ob_world * turtlebot.get_position() * tf_r_min;
+        // tf of obstacle to max range point (object to world -> world to robot -> robot to max range point)
+        const Transform2D tf_ob_max = tf_ob_world * turtlebot.get_position() * tf_r_max;
+
+        // Use the Circle-Line method to determine if the measurement captures the circle
+        const auto min_x = tf_ob_min.translation().x;
+        const auto min_y = tf_ob_min.translation().y;
+        const auto max_x = tf_ob_max.translation().x;
+        const auto max_y = tf_ob_max.translation().y;
+        const Vector2D nearest_intersect = nearest_circle_line_intersection(min_x, min_y, max_x, max_y, obr);
+
+        // If the Vector calculated contains NAN values, then there is no intersect
+        // therefore iterate the for loop to the next obstacle
+        if(std::isnan(nearest_intersect.x) && std::isnan(nearest_intersect.y))
+        {
+          continue;
+        }
+
+        // Find the distance between the measurement and the min range point
+        const auto dist_intersect_min = euclidian_distance(min_x, min_y, nearest_intersect.x, nearest_intersect.y);
+        // Find the raw distance measurement between the intersect point of the obstacle and the robot
+        const auto distance_measurement_raw = min_lidar_range + dist_intersect_min;
+
+        // Convert this raw distance measurement according to the resolution parameter
+        const auto resolution_count_raw = distance_measurement_raw / lidar_resolution;
+        const auto resolution_count_int = static_cast<int>(resolution_count_raw);
+        const double adjusted_distance_measurement = resolution_count_int * lidar_resolution;
+
+        // Assign the adjusted measurement to lidar_range
+        lidar_range = adjusted_distance_measurement;
+      }
+    }
+    
   }
 
   //
@@ -611,6 +683,63 @@ private:
   {
     double distance_sqrd = std::pow(x2 - x1, 2) + std::pow(y2 - y1, 2);
     return distance_sqrd < std::pow(radius, 2);
+  }
+
+  Vector2D nearest_circle_line_intersection(double min_x, double min_y, double max_x, double max_y, double radius)
+  {
+    // Math referenced from: https://mathworld.wolfram.com/Circle-LineIntersection.html
+    // Define important variables
+    const auto dx = max_x - min_x;
+    const auto dy = max_y - min_y;
+    const auto dr = std::sqrt(std::pow(dx, 2) + std::pow(dy, 2));
+    const auto D = min_x * max_y - max_x * min_y;
+
+    // Calculate discriminant
+    const auto discriminant = (std::pow(radius, 2) * std::pow(dr, 2)) - std::pow(D, 2);
+    // If the discriminant is less than 0, then no intersection, and return a NAN vector
+    if(discriminant < 0.0)
+    {
+      return Vector2D{NAN, NAN};
+    }
+
+    // Additional variables
+    const auto sgn_dy = std::pow(-1, std::signbit(dy));
+    const auto mag_dy = std::abs(dy);
+
+    // Find the points of intersection
+    const auto x_1 = ((D * dy) + (sgn_dy * dx * std::sqrt(std::pow(radius, 2) * std::pow(dr, 2) - std::pow(D, 2))))/(std::pow(dr, 2));
+    const auto y_1 = (((-D * dx) + (mag_dy * std::sqrt(std::pow(radius, 2) * std::pow(dr, 2) - std::pow(D, 2)))))/(std::pow(dr, 2));
+
+    const auto x_2 = ((D * dy) - (sgn_dy * dx * std::sqrt(std::pow(radius, 2) * std::pow(dr, 2) - std::pow(D, 2))))/(std::pow(dr, 2));
+    const auto y_2 = (((-D * dx) - (mag_dy * std::sqrt(std::pow(radius, 2) * std::pow(dr, 2) - std::pow(D, 2)))))/(std::pow(dr, 2));
+
+    // If discriminant is more than 0, then two intersection points, and return the closest point to min range point
+    if(discriminant > 0)
+    {
+      const auto dist_1 = euclidian_distance(min_x, min_y, x_1, y_1);
+      const auto dist_2 = euclidian_distance(min_x, min_y, x_2, y_2);
+
+      // If intersect point 1 is closer, return that
+      if(dist_1 < dist_2)
+      {
+        return Vector2D{x_1, y_1};
+      }
+      // Else, return point 2
+      else
+      {
+        return Vector2D{x_2, y_2};
+      }
+    }
+    // Else, the discriminant would be 0, and the two points would be the same (AKA the tangent), thus return either point
+    else
+    {
+      return Vector2D{x_1, y_1};
+    }
+  }
+
+  double euclidian_distance(double x1, double y1, double x2, double y2)
+  {
+    return std::sqrt(std::pow(x2 - x1, 2) + std::pow(y2 - y1, 2));
   }
 
 };
