@@ -47,6 +47,7 @@
 #include "std_srvs/srv/empty.hpp"
 #include "nusim/srv/teleport.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
 
 #include "turtlelib/diff_drive.hpp"
 
@@ -80,8 +81,16 @@ public:
     obr = rosnu::declare_and_get_param<double>("obstacles/r", 0.75f, *this, "Radius of all obstacles");
     input_noise = rosnu::declare_and_get_param<double>("input_noise", 0.2f, *this, "The amount of noise the sensor receives");
     slip_fraction = rosnu::declare_and_get_param<double>("slip_fraction", 0.2f, *this, "The amount of slipping that the wheels encounter");
+    // Basic Sensor Parameters
     basic_sensor_variance = rosnu::declare_and_get_param<double>("basic_sensor_variance", 0.01f, *this, "The amount of noise for sensor data");
     max_range = rosnu::declare_and_get_param<double>("max_range", 1.0f, *this, "The sensor range for the simulated robot");
+    // Lidar Parameters
+    min_lidar_range = rosnu::declare_and_get_param<double>("min_lidar_range", 1.0f, *this, "");
+    max_lidar_range = rosnu::declare_and_get_param<double>("max_lidar_range", 1.0f, *this, "");
+    lidar_angle_incr = rosnu::declare_and_get_param<double>("lidar_angle_incr", 1.0f, *this, "");
+    lidar_resolution = rosnu::declare_and_get_param<double>("lidar_resolution", 1.0f, *this, "");
+    lidar_noise_level = rosnu::declare_and_get_param<double>("lidar_noise_level", 1.0f, *this, "");
+
 
     auto param_desc = rcl_interfaces::msg::ParameterDescriptor{}; // Prepare for parameter descriptions
 
@@ -139,6 +148,8 @@ public:
     fake_sensor_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/fake_sensor", qos);
     // Publishing sensor data
     sensor_data_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>("red/sensor_data", 100);
+    // Publishing fake lidar data
+    fake_lidar_pub = create_publisher<sensor_msgs::msg::LaserScan>("~/fake_lidar", 100);
     // Publishing the path taken
     path_pub = create_publisher<nav_msgs::msg::Path>("nav_msgs/path", 100);
 
@@ -174,6 +185,7 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr wall_pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obs_pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr fake_sensor_pub;
+  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr fake_lidar_pub;
   rclcpp::Subscription<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr wheel_cmd_sub;
   rclcpp::Publisher<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_data_pub;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
@@ -195,6 +207,7 @@ private:
   rclcpp::Time start_period;
   double basic_sensor_variance;
   double max_range;
+  double min_lidar_range, max_lidar_range, lidar_angle_incr, lidar_resolution, lidar_noise_level;
 
   //
   // Objects
