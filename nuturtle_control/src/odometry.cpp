@@ -287,7 +287,7 @@ private:
     // HELPER FUNCTIONS
     //
     /// @brief
-    void init_var()
+    void init_var() // this does not make sense as a function can be just one line
     {
         // Initialize the diff drive robot
         turtlebot = DiffDrive(wheel_radius, track_width);
@@ -304,11 +304,11 @@ private:
         return (wheel_radius == -1.0 || motor_cmd_max == -1.0 || track_width == -1.0 || motor_cmd_per_rad_sec == -1.0 || encoder_ticks_per_rad == -1.0);
     }
 
-    double calc_angle_diff(double subtracted, double subtractor)
+    double calc_angle_diff(double subtracted, double subtractor) // this function seems unnecessary you can use the normalize_angle
     {
-        double diff = subtracted - subtractor;
+        double diff = subtracted - subtractor; // auto
         if (diff > PI) {
-            diff -= 2 * PI;
+            diff -= 2 * PI; // 2.0
         } else if (diff < -PI) {
             diff += 2 * PI;
         }

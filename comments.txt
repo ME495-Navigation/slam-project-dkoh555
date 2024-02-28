@@ -1,0 +1,3 @@
+Some tests fail
+Do not flood the console with constant debugging information.
+Nodes missing comments explaining the ros api

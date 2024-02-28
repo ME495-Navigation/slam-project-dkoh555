@@ -51,7 +51,7 @@ namespace turtlelib {
     // DiffDrive functions
     void DiffDrive::forward_k(WheelPosition position_change) {
         // Calculte the x velocity
-        double x_vel = (position_change.right + position_change.left) * wheel_radius / 2;
+        double x_vel = (position_change.right + position_change.left) * wheel_radius / 2; // const auto /2.0
 
         // The y velocity is always 0
         double y_vel = 0.0;
@@ -88,7 +88,7 @@ namespace turtlelib {
         }
 
         // Calculate the change in wheel positions required to achieve the input twist
-        double right_change = (1/wheel_radius) * (twist.x + ((track_width * twist.omega)/2));
+        double right_change = (1/wheel_radius) * (twist.x + ((track_width * twist.omega)/2)); // const auto
         double left_change = (1/wheel_radius) * (twist.x - ((track_width * twist.omega)/2));
 
         return WheelPosition{right_change, left_change};
