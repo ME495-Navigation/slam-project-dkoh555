@@ -473,7 +473,7 @@ private:
     for (int i = 0; i < num_measurement; i++)
     {
       // Initialize the lidar range value for that measurement
-      float lidar_range = 0.0;
+      float lidar_range = max_lidar_range + 1.0; // Assign this value to check if changes occur
 
       // For this measurement and its angle,
       // Find the min and max range points tfs relative to the robot frame
@@ -548,9 +548,12 @@ private:
         const auto resolution_count_int = static_cast<int>(resolution_count_raw);
         const double adjusted_distance_measurement = resolution_count_int * lidar_resolution;
 
-        // Assign the adjusted measurement to lidar_range
-        lidar_range = adjusted_distance_measurement;
+        // Assign the adjusted measurement to lidar_range if it's less than the prev lidar_range
+        lidar_range = (adjusted_distance_measurement < lidar_range) ? adjusted_distance_measurement : lidar_range;
       }
+
+      // If nothing was detected, set lidar_range to zero
+      lidar_range = (lidar_range != (max_lidar_range + 1.0)) ? lidar_range : 0.0;
 
       // If lidar has any non-zero readings, no need to check for wall
       // and iterate to next lidar measurement
