@@ -85,11 +85,11 @@ public:
     basic_sensor_variance = rosnu::declare_and_get_param<double>("basic_sensor_variance", 0.01f, *this, "The amount of noise for sensor data");
     max_range = rosnu::declare_and_get_param<double>("max_range", 1.0f, *this, "The sensor range for the simulated robot");
     // Lidar Parameters
-    min_lidar_range = rosnu::declare_and_get_param<double>("min_lidar_range", 1.0f, *this, "");
+    min_lidar_range = rosnu::declare_and_get_param<double>("min_lidar_range", 0.1f, *this, "");
     max_lidar_range = rosnu::declare_and_get_param<double>("max_lidar_range", 1.0f, *this, "");
-    lidar_angle_incr = rosnu::declare_and_get_param<double>("lidar_angle_incr", 1.0f, *this, "");
-    lidar_resolution = rosnu::declare_and_get_param<double>("lidar_resolution", 1.0f, *this, "");
-    lidar_noise_level = rosnu::declare_and_get_param<double>("lidar_noise_level", 1.0f, *this, "");
+    lidar_angle_incr = rosnu::declare_and_get_param<double>("lidar_angle_incr", 0.05f, *this, "");
+    lidar_resolution = rosnu::declare_and_get_param<double>("lidar_resolution", 0.0001f, *this, "");
+    lidar_noise_level = rosnu::declare_and_get_param<double>("lidar_noise_level", 0.1f, *this, "");
 
 
     auto param_desc = rcl_interfaces::msg::ParameterDescriptor{}; // Prepare for parameter descriptions
@@ -412,14 +412,31 @@ private:
   //
   void fake_lidar_broadcast()
   {
+    // Fill in the LaserScan message fields
+      sensor_msgs::msg::LaserScan msg;
+      msg.ranges.clear(); // Clear the ranges array to get rid of "ghost" points
+      msg.header.stamp = rclcpp::Clock().now();
+      msg.header.frame_id = "red/base_footprint";
+      msg.angle_min = 0.0;
+      msg.angle_max = 2 * PI;
+      msg.angle_increment = lidar_angle_incr;
+      msg.time_increment = 0.0;
+      msg.scan_time = 1/5;
+      msg.range_min = min_lidar_range;
+      msg.range_max = max_lidar_range;
+
     // Find the total number of measurements involved in one scan (dependent on angle increment parameter)
     const auto num_measurements_raw = 360.0/lidar_angle_incr;
     const auto num_measurement = static_cast<int>(num_measurements_raw);
+
+    // Initialize the vector of ranges for the lidar message
+    std::vector<float> range_arr;
+
     // Iterate through every measurement
     for (int i = 0; i < num_measurement; i++)
     {
       // Initialize the lidar range value for that measurement
-      const double lidar_range = 0.0;
+      float lidar_range = 0.0;
 
       // For this measurement and its angle,
       // Find the min and max range points tfs relative to the robot frame
@@ -452,11 +469,30 @@ private:
         const auto min_y = tf_ob_min.translation().y;
         const auto max_x = tf_ob_max.translation().x;
         const auto max_y = tf_ob_max.translation().y;
+        // Vector from obstacle frame to intersection point
         const Vector2D nearest_intersect = nearest_circle_line_intersection(min_x, min_y, max_x, max_y, obr);
 
         // If the Vector calculated contains NAN values, then there is no intersect
         // therefore iterate the for loop to the next obstacle
-        if(std::isnan(nearest_intersect.x) && std::isnan(nearest_intersect.y))
+        if(std::isnan(nearest_intersect.x) || std::isnan(nearest_intersect.y))
+        {
+          continue;
+        }
+
+        // To deal with 'duplicate intersection points',
+        // check the sign of the vector relative to the robot between the min range point and intersection point.
+        // tf of obstacle to intersection point
+        const Transform2D tf_ob_point = Transform2D{nearest_intersect};
+        // tf of robot to intersection point
+        const Transform2D tf_r_point = turtlebot.get_position().inv() * tf_ob_world.inv() * tf_ob_point;
+        // Compare the signs of both tf vectors
+        const auto sgn_min_x = std::pow(-1, std::signbit(tf_r_min.translation().x));
+        const auto sgn_min_y = std::pow(-1, std::signbit(tf_r_min.translation().y));
+        const auto sgn_point_x = std::pow(-1, std::signbit(tf_r_point.translation().x));
+        const auto sgn_point_y = std::pow(-1, std::signbit(tf_r_point.translation().y));
+        // If the signs are opposite then the measurement is a false reading,
+        // therefore iterate the for loop to the next obstacle
+        if((sgn_min_x == -1 * sgn_point_x) && (sgn_min_y == -1 * sgn_point_y))
         {
           continue;
         }
@@ -473,7 +509,15 @@ private:
 
         // Assign the adjusted measurement to lidar_range
         lidar_range = adjusted_distance_measurement;
+        // Once lidar_range is assigned, no other object should be detected so break loop
+        break;
       }
+
+      // Add lidar_range to range_array
+      msg.ranges.push_back(lidar_range);
+
+      // Publish the message
+      fake_lidar_pub->publish(msg);
     }
     
   }
@@ -712,6 +756,18 @@ private:
 
     const auto x_2 = ((D * dy) - (sgn_dy * dx * std::sqrt(std::pow(radius, 2) * std::pow(dr, 2) - std::pow(D, 2))))/(std::pow(dr, 2));
     const auto y_2 = (((-D * dx) - (mag_dy * std::sqrt(std::pow(radius, 2) * std::pow(dr, 2) - std::pow(D, 2)))))/(std::pow(dr, 2));
+
+    // // To deal with the 'duplicate points',
+    // // compare the signs of the min_x & min_y against x_1 & y_1, if they are opposite then its a duplicate
+    // const auto sgn_min_x = std::pow(-1, std::signbit(min_x));
+    // const auto sgn_min_y = std::pow(-1, std::signbit(min_y));
+    // const auto sgn_x_1 = std::pow(-1, std::signbit(x_1));
+    // const auto sgn_y_1 = std::pow(-1, std::signbit(y_1));
+    // if((sgn_min_x == -1 * sgn_x_1) && (sgn_min_y == -1 * sgn_y_1))
+    // {
+    //   RCLCPP_INFO_STREAM(get_logger(), "Duplicate");
+    //   return Vector2D{NAN, NAN};
+    // }
 
     // If discriminant is more than 0, then two intersection points, and return the closest point to min range point
     if(discriminant > 0)
