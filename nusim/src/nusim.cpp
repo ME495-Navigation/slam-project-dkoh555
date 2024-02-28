@@ -37,6 +37,8 @@
 #include <optional>
 #include <map>
 #include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
@@ -166,6 +168,8 @@ public:
     //
     // Transform
     tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+    tfBuffer = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+    tfListener = std::make_shared<tf2_ros::TransformListener>(*tfBuffer);
 
     //
     // TIMER
@@ -179,6 +183,8 @@ private:
   //
   rclcpp::TimerBase::SharedPtr timer_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
+  std::unique_ptr<tf2_ros::Buffer> tfBuffer;
+  std::shared_ptr<tf2_ros::TransformListener> tfListener;
   rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_pub;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_srv;
   rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_srv;
@@ -197,6 +203,7 @@ private:
   size_t timestep;
   double x0, y0, theta0; // Starting pos
   double x, y, theta; // Current pos
+  double x_scan, y_scan; // Translation on ground plane from base_footprint to base_scan
   double arena_x_length, arena_y_length; // World dimensions
   std::vector<double> obx_arr, oby_arr; // Obstacle coords
   double obr;
@@ -407,23 +414,51 @@ private:
     path_pub->publish(msg);
   }
 
+  void check_base_scan_tf()
+  {
+    // Finding the position of the base_scan frame relative to the base_footprint frame
+    try
+    {
+      const auto tf_footprint_scan = tfBuffer->lookupTransform("red/base_footprint", "red/base_scan", tf2::TimePointZero);
+
+      // Note the vector
+      x_scan = tf_footprint_scan.transform.translation.x;
+      y_scan = tf_footprint_scan.transform.translation.y;
+    }
+    catch (const tf2::TransformException & ex) {
+      RCLCPP_DEBUG(get_logger(),  ex.what());
+    }
+  }
+
   //
   // PUBLISHER FUNCTIONS
   //
   void fake_lidar_broadcast()
   {
     // Fill in the LaserScan message fields
-      sensor_msgs::msg::LaserScan msg;
-      msg.ranges.clear(); // Clear the ranges array to get rid of "ghost" points
-      msg.header.stamp = rclcpp::Clock().now();
-      msg.header.frame_id = "red/base_footprint";
-      msg.angle_min = 0.0;
-      msg.angle_max = 2 * PI;
-      msg.angle_increment = lidar_angle_incr;
-      msg.time_increment = 0.0;
-      msg.scan_time = 1/5;
-      msg.range_min = min_lidar_range;
-      msg.range_max = max_lidar_range;
+    sensor_msgs::msg::LaserScan msg;
+    msg.ranges.clear(); // Clear the ranges array to get rid of "ghost" points
+    msg.header.stamp = rclcpp::Clock().now();
+    msg.header.frame_id = "red/base_scan";
+    msg.angle_min = 0.0;
+    msg.angle_max = 2 * PI;
+    msg.angle_increment = lidar_angle_incr;
+    msg.time_increment = 0.0;
+    msg.scan_time = 1/5;
+    msg.range_min = min_lidar_range;
+    msg.range_max = max_lidar_range;
+
+    // For accurate real-life representation of lidar readings, need the tf of world to turtlebot scanner.
+    //
+    if(x_scan == 0.0 && y_scan == 0.0)
+    {
+      check_base_scan_tf();
+    }
+    // tf of robot footprint to scanner
+    const Transform2D tf_footprint_scanner(Vector2D{x_scan, y_scan});
+    // tf of world to robot scanner (on the ground plane)
+    const Transform2D tf_world_scanner = turtlebot.get_position() * tf_footprint_scanner;
+    // FROM NOW ON, ANY MENTION OF ROBOT MEANS THE ROBOT SCANNER IN THIS FUNCTION
 
     // Find the total number of measurements involved in one scan (dependent on angle increment parameter)
     const auto num_measurements_raw = 360.0/lidar_angle_incr;
@@ -460,9 +495,9 @@ private:
         // tf of object to world
         const Transform2D tf_ob_world(Vector2D{-obx, -oby});
         // tf of obstacle to min range point (object to world -> world to robot -> robot to min range point)
-        const Transform2D tf_ob_min = tf_ob_world * turtlebot.get_position() * tf_r_min;
+        const Transform2D tf_ob_min = tf_ob_world * tf_world_scanner * tf_r_min;
         // tf of obstacle to max range point (object to world -> world to robot -> robot to max range point)
-        const Transform2D tf_ob_max = tf_ob_world * turtlebot.get_position() * tf_r_max;
+        const Transform2D tf_ob_max = tf_ob_world * tf_world_scanner * tf_r_max;
 
         // Use the Circle-Line method to determine if the measurement captures the circle
         const auto min_x = tf_ob_min.translation().x;
@@ -484,7 +519,7 @@ private:
         // tf of obstacle to intersection point
         const Transform2D tf_ob_point = Transform2D{nearest_intersect};
         // tf of robot to intersection point
-        const Transform2D tf_r_point = turtlebot.get_position().inv() * tf_ob_world.inv() * tf_ob_point;
+        const Transform2D tf_r_point = tf_world_scanner.inv() * tf_ob_world.inv() * tf_ob_point;
         // Compare the signs of both tf vectors
         const auto sgn_min_x = std::pow(-1, std::signbit(tf_r_min.translation().x));
         const auto sgn_min_y = std::pow(-1, std::signbit(tf_r_min.translation().y));
@@ -700,6 +735,9 @@ private:
     y = y0;
     theta = theta0;
 
+    x_scan = 0.0;
+    y_scan = 0.0;
+
     // Initialize the turtlebot
     turtlebot = DiffDrive(wheel_radius, track_width, Transform2D(Vector2D{x, y}, theta), WheelPosition()); 
 
@@ -756,18 +794,6 @@ private:
 
     const auto x_2 = ((D * dy) - (sgn_dy * dx * std::sqrt(std::pow(radius, 2) * std::pow(dr, 2) - std::pow(D, 2))))/(std::pow(dr, 2));
     const auto y_2 = (((-D * dx) - (mag_dy * std::sqrt(std::pow(radius, 2) * std::pow(dr, 2) - std::pow(D, 2)))))/(std::pow(dr, 2));
-
-    // // To deal with the 'duplicate points',
-    // // compare the signs of the min_x & min_y against x_1 & y_1, if they are opposite then its a duplicate
-    // const auto sgn_min_x = std::pow(-1, std::signbit(min_x));
-    // const auto sgn_min_y = std::pow(-1, std::signbit(min_y));
-    // const auto sgn_x_1 = std::pow(-1, std::signbit(x_1));
-    // const auto sgn_y_1 = std::pow(-1, std::signbit(y_1));
-    // if((sgn_min_x == -1 * sgn_x_1) && (sgn_min_y == -1 * sgn_y_1))
-    // {
-    //   RCLCPP_INFO_STREAM(get_logger(), "Duplicate");
-    //   return Vector2D{NAN, NAN};
-    // }
 
     // If discriminant is more than 0, then two intersection points, and return the closest point to min range point
     if(discriminant > 0)
