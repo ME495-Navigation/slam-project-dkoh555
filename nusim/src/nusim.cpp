@@ -88,7 +88,7 @@ public:
     max_range = rosnu::declare_and_get_param<double>("max_range", 1.0f, *this, "The sensor range for the simulated robot");
     // Lidar Parameters
     min_lidar_range = rosnu::declare_and_get_param<double>("min_lidar_range", 0.1f, *this, "");
-    max_lidar_range = rosnu::declare_and_get_param<double>("max_lidar_range", 1.0f, *this, "");
+    max_lidar_range = rosnu::declare_and_get_param<double>("max_lidar_range", 5.0f, *this, "");
     lidar_angle_incr = rosnu::declare_and_get_param<double>("lidar_angle_incr", 0.05f, *this, "");
     lidar_resolution = rosnu::declare_and_get_param<double>("lidar_resolution", 0.0001f, *this, "");
     lidar_noise_level = rosnu::declare_and_get_param<double>("lidar_noise_level", 0.005f, *this, "");
@@ -205,6 +205,7 @@ private:
   double x, y, theta; // Current pos
   double x_scan, y_scan; // Translation on ground plane from base_footprint to base_scan
   double arena_x_length, arena_y_length; // World dimensions
+  double wall_thickness;
   std::vector<double> obx_arr, oby_arr; // Obstacle coords
   double obr;
   double wheel_radius, track_width, motor_cmd_per_rad_sec, encoder_ticks_per_rad, collision_radius;
@@ -459,7 +460,7 @@ private:
     const Transform2D tf_footprint_scanner(Vector2D{x_scan, y_scan});
     // tf of world to robot scanner (on the ground plane)
     const Transform2D tf_world_scanner = turtlebot.get_position() * tf_footprint_scanner;
-    // FROM NOW ON, ANY MENTION OF ROBOT MEANS THE ROBOT SCANNER IN THIS FUNCTION
+    // FROM NOW ON, ANY MENTION OF ROBOT (r) MEANS THE ROBOT SCANNER IN THIS FUNCTION
 
     // Find the total number of measurements involved in one scan (dependent on angle increment parameter)
     const auto num_measurements_raw = 360.0/lidar_angle_incr;
@@ -490,6 +491,10 @@ private:
       // Iterate through each obstacle in the world
       for (size_t i = 0; i < obx_arr.size(); i++)
       {
+        //
+        // CHECK OBSTACLES
+        //
+
         const auto obx = this->obx_arr[i];
         const auto oby = this->oby_arr[i];
         // Find the min and max range point tfs relative to the obstacle,
@@ -543,19 +548,88 @@ private:
         const auto resolution_count_int = static_cast<int>(resolution_count_raw);
         const double adjusted_distance_measurement = resolution_count_int * lidar_resolution;
 
-        // Assign the adjusted measurement (plus gaussian random variable (simulated noise)) to lidar_range
-        lidar_range = adjusted_distance_measurement + lidar_noise_generator(num_generator::get_random());
-        // Once lidar_range is assigned, no other object should be detected so break loop
-        break;
+        // Assign the adjusted measurement to lidar_range
+        lidar_range = adjusted_distance_measurement;
       }
 
-      // Add lidar_range to range_array
-      msg.ranges.push_back(lidar_range);
+      // If lidar has any non-zero readings, no need to check for wall
+      // and iterate to next lidar measurement
+      if(lidar_range != 0.0)
+      {
+        // Do nothing
+      }
+      else
+      {
+        //
+        // CHECK WALLS
+        //
+        
+        // Check the max range point relative to each wall to determine if lidar detects it.
+        double wall_range = max_lidar_range + 1.0;
+        // tf of robot frame that is oriented North to robot frame
+        const Transform2D tf_north_r = Transform2D{tf_world_scanner.rotation()};
+        // tf of robot frame that is oriented North to max range point
+        const Transform2D tf_north_max = tf_north_r * tf_r_max;
+        // Relevant wall coords
+        const auto inner_north_wall_x = (arena_x_length / 2.0) - (wall_thickness/2);
+        const auto inner_south_wall_x = (- arena_x_length / 2.0) + (wall_thickness/2);
+        const auto inner_west_wall_y = (arena_y_length / 2.0) - (wall_thickness/2);
+        const auto inner_east_wall_y = (- arena_y_length / 2.0) + (wall_thickness/2);
+        // Check north wall
+        if(tf_north_max.translation().x >= inner_north_wall_x)
+        {
+          // Find the angle (degrees) between north and current lidar measurement
+          const auto north_lidar_angle = turtlelib::angle(Vector2D{inner_north_wall_x, 0.0},
+            tf_north_max.translation());
+          // Apply trig theorem, using the adjacent and opposite to find the hypotenuse (also note the curr pos of the robot)
+          const auto temp_wall_range = ((inner_north_wall_x - tf_world_scanner.translation().x) / std::cos(turtlelib::deg2rad(north_lidar_angle)));
+          // If this reading is smaller than the previous, this is the correct one
+          wall_range = (temp_wall_range < wall_range) ? temp_wall_range : wall_range;
+        }
+        // Check south wall
+        if (tf_north_max.translation().x <= inner_south_wall_x)
+        {
+          // Find the angle (degrees) between south and current lidar measurement
+          const auto south_lidar_angle = turtlelib::angle(Vector2D{inner_south_wall_x, 0.0},
+            tf_north_max.translation());
+          // Apply trig theorem, using the adjacent and opposite to find the hypotenuse
+          const auto temp_wall_range = -(inner_south_wall_x - tf_world_scanner.translation().x) / std::cos(turtlelib::deg2rad(south_lidar_angle));
+          // If this reading is smaller than the previous, this is the correct one
+          wall_range = (temp_wall_range < wall_range) ? temp_wall_range : wall_range;
+        }
+        // Check west wall
+        if (tf_north_max.translation().y >= inner_west_wall_y)
+        {
+          // Find the angle (degrees) between west and current lidar measurement
+          const auto west_lidar_angle = turtlelib::angle(Vector2D{0.0, inner_west_wall_y},
+            tf_north_max.translation());
+          // Apply trig theorem, using the adjacent and opposite to find the hypotenuse
+          const auto temp_wall_range = (inner_west_wall_y - tf_world_scanner.translation().y) / std::cos(turtlelib::deg2rad(west_lidar_angle));
+          // If this reading is smaller than the previous, this is the correct one
+          wall_range = (temp_wall_range < wall_range) ? temp_wall_range : wall_range;
+        }
+        // Check east wall
+        if (tf_north_max.translation().y <= inner_east_wall_y)
+        {
+          // Find the angle (degrees) between east and current lidar measurement
+          const auto east_lidar_angle = turtlelib::angle(Vector2D{0.0, inner_east_wall_y},
+            tf_north_max.translation());
+          // Apply trig theorem, using the adjacent and opposite to find the hypotenuse
+          const auto temp_wall_range = -(inner_east_wall_y - tf_world_scanner.translation().y) / std::cos(turtlelib::deg2rad(east_lidar_angle));
+          // If this reading is smaller than the previous, this is the correct one
+          wall_range = (temp_wall_range < wall_range) ? temp_wall_range : wall_range;
+        }
 
-      // Publish the message
-      fake_lidar_pub->publish(msg);
+        // Substitute lidar_range value w/ appropriate wall_range value if something is measured
+        lidar_range = (wall_range != (max_lidar_range + 1.0)) ? wall_range : 0.0;
+      }
+
+      // Add lidar_range (plus gaussian random variable (simulated noise)) to range_array
+      msg.ranges.push_back(lidar_range + lidar_noise_generator(num_generator::get_random()));
     }
-    
+
+    // Publish the message
+    fake_lidar_pub->publish(msg);
   }
 
   //
@@ -582,7 +656,7 @@ private:
 
       wall.scale.x = 0.0;
       wall.scale.y = 0.0;
-      wall.scale.z = 0.25;
+      wall.scale.z = wall_thickness;
       wall.pose.position.x = 0.0;
       wall.pose.position.y = 0.0;
       wall.pose.position.z = 0.125;
@@ -738,6 +812,8 @@ private:
 
     x_scan = 0.0;
     y_scan = 0.0;
+
+    wall_thickness = 0.125;
 
     // Initialize the turtlebot
     turtlebot = DiffDrive(wheel_radius, track_width, Transform2D(Vector2D{x, y}, theta), WheelPosition()); 
