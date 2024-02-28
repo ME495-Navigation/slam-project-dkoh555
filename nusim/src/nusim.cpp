@@ -88,7 +88,7 @@ public:
     max_range = rosnu::declare_and_get_param<double>("max_range", 1.0f, *this, "The sensor range for the simulated robot");
     // Lidar Parameters
     min_lidar_range = rosnu::declare_and_get_param<double>("min_lidar_range", 0.1f, *this, "");
-    max_lidar_range = rosnu::declare_and_get_param<double>("max_lidar_range", 5.0f, *this, "");
+    max_lidar_range = rosnu::declare_and_get_param<double>("max_lidar_range", 1.0f, *this, "");
     lidar_angle_incr = rosnu::declare_and_get_param<double>("lidar_angle_incr", 0.05f, *this, "");
     lidar_resolution = rosnu::declare_and_get_param<double>("lidar_resolution", 0.0001f, *this, "");
     lidar_noise_level = rosnu::declare_and_get_param<double>("lidar_noise_level", 0.005f, *this, "");
@@ -573,13 +573,15 @@ private:
         const Transform2D tf_north_r = Transform2D{tf_world_scanner.rotation()};
         // tf of robot frame that is oriented North to max range point
         const Transform2D tf_north_max = tf_north_r * tf_r_max;
+        // tf of world to max range point
+        const Transform2D tf_world_max = tf_world_scanner * tf_r_max;
         // Relevant wall coords
         const auto inner_north_wall_x = (arena_x_length / 2.0) - (wall_thickness/2);
         const auto inner_south_wall_x = (- arena_x_length / 2.0) + (wall_thickness/2);
         const auto inner_west_wall_y = (arena_y_length / 2.0) - (wall_thickness/2);
         const auto inner_east_wall_y = (- arena_y_length / 2.0) + (wall_thickness/2);
         // Check north wall
-        if(tf_north_max.translation().x >= inner_north_wall_x)
+        if(tf_world_max.translation().x >= inner_north_wall_x)
         {
           // Find the angle (degrees) between north and current lidar measurement
           const auto north_lidar_angle = turtlelib::angle(Vector2D{inner_north_wall_x, 0.0},
@@ -590,7 +592,7 @@ private:
           wall_range = (temp_wall_range < wall_range) ? temp_wall_range : wall_range;
         }
         // Check south wall
-        if (tf_north_max.translation().x <= inner_south_wall_x)
+        if (tf_world_max.translation().x <= inner_south_wall_x)
         {
           // Find the angle (degrees) between south and current lidar measurement
           const auto south_lidar_angle = turtlelib::angle(Vector2D{inner_south_wall_x, 0.0},
@@ -601,7 +603,7 @@ private:
           wall_range = (temp_wall_range < wall_range) ? temp_wall_range : wall_range;
         }
         // Check west wall
-        if (tf_north_max.translation().y >= inner_west_wall_y)
+        if (tf_world_max.translation().y >= inner_west_wall_y)
         {
           // Find the angle (degrees) between west and current lidar measurement
           const auto west_lidar_angle = turtlelib::angle(Vector2D{0.0, inner_west_wall_y},
@@ -612,7 +614,7 @@ private:
           wall_range = (temp_wall_range < wall_range) ? temp_wall_range : wall_range;
         }
         // Check east wall
-        if (tf_north_max.translation().y <= inner_east_wall_y)
+        if (tf_world_max.translation().y <= inner_east_wall_y)
         {
           // Find the angle (degrees) between east and current lidar measurement
           const auto east_lidar_angle = turtlelib::angle(Vector2D{0.0, inner_east_wall_y},
