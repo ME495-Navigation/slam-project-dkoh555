@@ -91,7 +91,7 @@ public:
     max_lidar_range = rosnu::declare_and_get_param<double>("max_lidar_range", 1.0f, *this, "");
     lidar_angle_incr = rosnu::declare_and_get_param<double>("lidar_angle_incr", 0.05f, *this, "");
     lidar_resolution = rosnu::declare_and_get_param<double>("lidar_resolution", 0.0001f, *this, "");
-    lidar_noise_level = rosnu::declare_and_get_param<double>("lidar_noise_level", 0.1f, *this, "");
+    lidar_noise_level = rosnu::declare_and_get_param<double>("lidar_noise_level", 0.005f, *this, "");
 
 
     auto param_desc = rcl_interfaces::msg::ParameterDescriptor{}; // Prepare for parameter descriptions
@@ -224,6 +224,7 @@ private:
   std::normal_distribution<> input_noise_generator;
   std::uniform_real_distribution<> slip_noise_generator;
   std::normal_distribution<> obstacle_noise_generator;
+  std::normal_distribution<> lidar_noise_generator;
 
   // Vectors
   std::vector<geometry_msgs::msg::PoseStamped> robot_path;
@@ -542,8 +543,8 @@ private:
         const auto resolution_count_int = static_cast<int>(resolution_count_raw);
         const double adjusted_distance_measurement = resolution_count_int * lidar_resolution;
 
-        // Assign the adjusted measurement to lidar_range
-        lidar_range = adjusted_distance_measurement;
+        // Assign the adjusted measurement (plus gaussian random variable (simulated noise)) to lidar_range
+        lidar_range = adjusted_distance_measurement + lidar_noise_generator(num_generator::get_random());
         // Once lidar_range is assigned, no other object should be detected so break loop
         break;
       }
@@ -749,6 +750,9 @@ private:
 
     // Generate a noise gaussian variable
     obstacle_noise_generator = std::normal_distribution<>{0, basic_sensor_variance};
+
+    // Generate a lidar gaussian variable
+    lidar_noise_generator = std::normal_distribution<>{0, lidar_noise_level};
 
     // Initialize a clock reading for tracking fake sensor data
     start_period = rclcpp::Clock().now();
