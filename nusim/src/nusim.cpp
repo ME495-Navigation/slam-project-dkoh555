@@ -88,7 +88,7 @@ public:
     max_range = rosnu::declare_and_get_param<double>("max_range", 1.0f, *this, "The sensor range for the simulated robot");
     // Lidar Parameters
     min_lidar_range = rosnu::declare_and_get_param<double>("min_lidar_range", 0.1f, *this, "");
-    max_lidar_range = rosnu::declare_and_get_param<double>("max_lidar_range", 1.0f, *this, "");
+    max_lidar_range = rosnu::declare_and_get_param<double>("max_lidar_range", 1.2f, *this, "");
     lidar_angle_incr = rosnu::declare_and_get_param<double>("lidar_angle_incr", 0.05f, *this, "");
     lidar_resolution = rosnu::declare_and_get_param<double>("lidar_resolution", 0.0001f, *this, "");
     lidar_noise_level = rosnu::declare_and_get_param<double>("lidar_noise_level", 0.005f, *this, "");
