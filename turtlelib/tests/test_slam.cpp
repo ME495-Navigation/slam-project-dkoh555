@@ -1,4 +1,4 @@
-#include "turtlelib/se2d.hpp"
+#include "turtlelib/slam.hpp"
 #include <cmath>
 #include <catch2/catch_all.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -9,29 +9,17 @@ using Catch::Matchers::WithinAbs;
 
 namespace turtlelib {
     
+    arma::mat test_matrix = arma::mat(2, 2, arma::fill::eye);
+
     TEST_CASE("initial_armadillo_test", "slam") {
-        // Standard test
-        Twist2D t_twist{1.2, 4.1, 3.9};
-        std::stringstream t_os;
-        t_os << t_twist;
-        REQUIRE((t_os).str() == "[1.2 4.1 3.9]");
+        auto val = test_matrix(0, 0);
+        REQUIRE(val == 1);
 
-        t_os.str("");
-        t_os.clear();
-        // Large values
-        t_twist.omega = 3.4;
-        t_twist.x = 380.2;
-        t_twist.y= 0.00345;
-        t_os << t_twist;
-        REQUIRE((t_os).str() == "[3.4 380.2 0.00345]");
+        val = test_matrix(1,0);
+        REQUIRE(val == 0);
 
-        t_os.str("");
-        t_os.clear();
-        // Negative values
-        t_twist.omega = -3.4;
-        t_twist.x = -0.2;
-        t_twist.y= -10.8;
-        t_os << t_twist;
-        REQUIRE((t_os).str() == "[-3.4 -0.2 -10.8]");
+        test_matrix.ones();
+        val = test_matrix(1,0);
+        REQUIRE(val == 1);
     }
 }
