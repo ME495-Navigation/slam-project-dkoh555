@@ -92,21 +92,21 @@ namespace turtlelib {
         DiffDrive robot2{3.2, 12.34};
         WheelPosition wheel_motion2 = robot2.inverse_k(Twist2D{PI, 0.0, 0.0});
 
-        REQUIRE_THAT(wheel_motion2.left, WithinAbs(PI * (12.34 / 2.0) / 3.2, TOLERANCE));
-        REQUIRE_THAT(wheel_motion2.right, WithinAbs(-PI * (12.34 / 2.0) / 3.2, TOLERANCE));
+        REQUIRE_THAT(wheel_motion2.left, WithinAbs(-PI * (12.34 / 2.0) / 3.2, TOLERANCE));
+        REQUIRE_THAT(wheel_motion2.right, WithinAbs(PI * (12.34 / 2.0) / 3.2, TOLERANCE));
 
         DiffDrive robot3{3.2, 12.34};
         WheelPosition wheel_motion3 = robot3.inverse_k(Twist2D{-PI, 0.0, 0.0});
 
-        REQUIRE_THAT(wheel_motion3.left, WithinAbs(-PI * (12.34 / 2.0) / 3.2, TOLERANCE));
-        REQUIRE_THAT(wheel_motion3.right, WithinAbs(PI * (12.34 / 2.0) / 3.2, TOLERANCE));
+        REQUIRE_THAT(wheel_motion3.left, WithinAbs(PI * (12.34 / 2.0) / 3.2, TOLERANCE));
+        REQUIRE_THAT(wheel_motion3.right, WithinAbs(-PI * (12.34 / 2.0) / 3.2, TOLERANCE));
 
         // Circular arc
         DiffDrive robot4{0.023, 0.88234};
         WheelPosition wheel_motion4 = robot4.inverse_k(Twist2D{PI, PI * 0.88234 / 2.0, 0.0});
 
-        REQUIRE_THAT(wheel_motion4.right, WithinAbs(0.0, TOLERANCE));
-        REQUIRE_THAT(wheel_motion4.left, WithinAbs(PI * 0.88234 / 0.023, TOLERANCE));
+        REQUIRE_THAT(wheel_motion4.right, WithinAbs(PI * 0.88234 / 0.023, TOLERANCE));
+        REQUIRE_THAT(wheel_motion4.left, WithinAbs(0.0, TOLERANCE));
 
         // Random arc
         DiffDrive robot5{0.023, 0.88234};
