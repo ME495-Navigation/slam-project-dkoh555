@@ -3,9 +3,12 @@ cmake_minimum_required(VERSION 3.22) # Set the minimum version of cmake
 # State the name of the project
 project(turtlelib)
 
+# # Include the armadillo library
+# find_package(Armadillo)
+
 # Create a library
 add_library(${PROJECT_NAME} src/geometry2d.cpp src/se2d.cpp
-            src/svg.cpp src/diff_drive.cpp)
+            src/svg.cpp src/diff_drive.cpp src/slam.cpp)
 
 # Enable C++17 support
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
@@ -79,6 +82,12 @@ if(BUILD_TESTING)
         target_link_libraries(test_diff_drive ${PROJECT_NAME} Catch2::Catch2WithMain)
         # register the test with CTest, telling it what executable to run
         add_test(NAME Testing_diff_drive COMMAND test_diff_drive)
+
+        # # Test for slam.cpp
+        # add_executable(test_slam tests/test_slam.cpp)
+        # target_link_libraries(test_slam ${PROJECT_NAME} Catch2::Catch2WithMain)
+        # # register the test with CTest, telling it what executable to run
+        # add_test(NAME Testing_slam COMMAND test_slam)
 endif()
 
 #####################

@@ -93,7 +93,7 @@ namespace turtlelib {
         WheelPosition wheel_motion2 = robot2.inverse_k(Twist2D{PI, 0.0, 0.0});
 
         REQUIRE_THAT(wheel_motion2.left, WithinAbs(-PI * (12.34 / 2.0) / 3.2, TOLERANCE));
-        REQUIRE_THAT(wheel_motion2.right, WithinAbs(PI * (12.34 / 2.0) / 3.2, TOLERANCE));
+        REQUIRE_THAT(wheel_motion2.right, WithinAbs(-PI * (12.34 / 2.0) / 3.2, TOLERANCE));
 
         DiffDrive robot3{3.2, 12.34};
         WheelPosition wheel_motion3 = robot3.inverse_k(Twist2D{-PI, 0.0, 0.0});
