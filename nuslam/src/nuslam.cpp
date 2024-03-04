@@ -38,7 +38,7 @@ public:
     //
     // CONSTRUCTOR
     //
-    nuslamNode() : Node("odometry")
+    nuslamNode() : Node("nuslam")
     {
         //
         // PARAMETERS
