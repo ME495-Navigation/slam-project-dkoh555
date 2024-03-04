@@ -11,6 +11,8 @@
 #include <armadillo>
 #include <unordered_set>
 
+#define HIGH_UNCERTAINTY 1e7
+
 namespace turtlelib
 {
     /// \brief The EKF SLAM implementation for a differential drive robot
@@ -67,17 +69,17 @@ namespace turtlelib
         /// \brief Constructor where SLAM starts with provided configuration and provided key variables
         Slam(Transform2D robot_position, int new_q_size, int new_max_landmarks, double new_W_noise, double new_R_noise);
 
-        // //
-        // // Functions
-        // //
-        // /// \brief Initialize the initial 'guess' values for sigma_t
-        // void initialize_sigma_t();
+        //
+        // Functions
+        //
+        /// \brief Initialize the initial 'guess' values for sigma_t
+        void initialize_sigma_t();
 
-        // /// \brief Uses current q_t and m_t vectors to update xi_t
-        // void update_xi();
+        /// \brief Uses current q_t and m_t vectors to update xi_t
+        void update_xi();
 
-        // /// \brief Uses current xi_t vector to update q_t and m_t
-        // void update_q_t_m_t();
+        /// \brief Uses current xi_t vector to update q_t and m_t
+        void update_q_t_m_t();
 
         /// \brief Set the current state, q_t, of the robot
         void set_q_t(Transform2D config);
