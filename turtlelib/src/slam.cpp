@@ -28,10 +28,10 @@ namespace turtlelib
     {
         arma::mat sigma_zero_q{q_size, q_size, arma::fill::zeros};
         arma::mat sigma_zero_m = arma::zeros(2 * max_landmarks, 2 * max_landmarks) * HIGH_UNCERTAINTY;
-        arma::mat zero12{q_size, 2 * max_landmarks, arma::fill::zeros};
-        arma::mat zero21{2 * max_landmarks, q_size, arma::fill::zeros};
+        arma::mat zeros12{q_size, 2 * max_landmarks, arma::fill::zeros};
+        arma::mat zeros21{2 * max_landmarks, q_size, arma::fill::zeros};
 
-        sigma_t = arma::join_vert(arma::join_horiz(sigma_zero_q, zero12), arma::join_horiz(zero21, sigma_zero_m));
+        sigma_t = arma::join_vert(arma::join_horiz(sigma_zero_q, zeros12), arma::join_horiz(zeros21, sigma_zero_m));
     }
 
     void Slam::update_xi()
@@ -50,5 +50,74 @@ namespace turtlelib
         q_t(0) = robot_position.rotation();
         q_t(1) = robot_position.translation().x;
         q_t(2) = robot_position.translation().y;
+    }
+
+    void Slam::predict_and_update_xi(Twist2D input)
+    {
+        // Ensure delta_y of input is 0
+        if(!almost_equal(input.y, 0.0))
+        {
+            throw std::runtime_error("delta_y of input twist must be 0.0");    
+        }
+
+        // Update Slam u_t
+        u_t(0) = input.omega;
+        u_t(1) = input.x;
+        u_t(2) = 0.0;
+
+        // Predict the new robot state given the input
+        // tf from world to current robot position
+        Transform2D tf_world_robot{Vector2D{q_t(1), q_t(2)}, q_t(0)};
+        // tf from current robot to predicted robot position
+        Transform2D tf_robot_predrobot = integrate_twist(input);
+        // tf from world to predicted robot position
+        Transform2D tf_world_predrobot = tf_world_robot * tf_robot_predrobot;
+
+        // Update Slam q_t with predicted robot position
+        set_q_t(tf_world_predrobot);
+        // Update Slam xi_t
+        update_xi();
+    }
+
+    void Slam::propogate_and_update_sigma()
+    {
+        // Find A
+        // Initialize variables for propogation
+        arma::mat pose_state_mat(q_size, q_size, arma::fill::zeros);
+        arma::mat zeros12{q_size, 2 * max_landmarks, arma::fill::zeros};
+        arma::mat zeros21{2 * max_landmarks, q_size, arma::fill::zeros};
+        arma::mat zeros22{2 * max_landmarks, 2 * max_landmarks, arma::fill::zeros};
+
+        // Check the rotational velocity of Slam u_t, then implement the appropriate equation
+        if(almost_equal(u_t(0), 0.0))
+        {
+            // Implement equation 9
+            pose_state_mat(1, 0) = -u_t(1) * sin(q_t(0));
+            pose_state_mat(2, 0) = u_t(1) * cos(q_t(0));
+        }
+        else
+        {
+            // Implement equation 10
+            pose_state_mat(1, 0) = -(u_t(1) / u_t(0)) * cos(q_t(0) + (u_t(1) / u_t(0)) * cos(normalize_angle(q_t(0) + u_t(0))));
+            pose_state_mat(2, 0) = -(u_t(1) / u_t(0)) * sin(q_t(0) + (u_t(1) / u_t(0)) * sin(normalize_angle(q_t(0) + u_t(0))));
+        }
+
+        arma::mat rhs = arma::join_vert(
+            arma::join_horiz(pose_state_mat, zeros12),
+            arma::join_horiz(zeros21, zeros22)
+        );
+
+        A = I + rhs;
+
+        // Find Q_bar,
+        // Implement equation 22
+        arma::mat Q_bar = arma::join_vert(
+            arma::join_horiz(Q, zeros12),
+            arma::join_horiz(zeros21, zeros22)
+        );
+
+        // Find the new sigma_t prediction,
+        // Implement equation 21
+        sigma_t = A * sigma_t * A.t() + Q_bar;
     }
 }

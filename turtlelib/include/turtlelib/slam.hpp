@@ -53,7 +53,7 @@ namespace turtlelib
         /// \brief The linearized state transition matrix for propogating uncertainty, used to calculate sigma_t
         arma::mat A = arma::eye(q_size + 2 * max_landmarks, q_size + 2 * max_landmarks);
         /// \brief The process noise matrix for the robot motion model, used to calculate sigma_t
-        arma::mat Q_bar{arma::eye(q_size, q_size) * W_noise};
+        arma::mat Q{arma::eye(q_size, q_size) * W_noise};
 
 
     public:
@@ -84,11 +84,11 @@ namespace turtlelib
         /// \brief Set the current state, q_t, of the robot
         void set_q_t(Transform2D config);
 
-        // /// \brief Predict and update the estimate of the combined state vector, xi_t (equation 20 implementation)
-        // arma::colvec predict_xi(arma::colvec u_t);
+        /// \brief Predict and update the estimate of the combined state vector, xi_t (equation 20 implementation)
+        void predict_and_update_xi(Twist2D input);
 
-        // /// \brief Propogate the uncertainty of the prediction (equation 21 implementation)
-        // arma::colvec propogate_uncertainty();
+        /// \brief Propogate the uncertainty of the prediction (equation 21 implementation), to be used after predict_and_update_xi()
+        void propogate_and_update_sigma();
     };
 }
 
