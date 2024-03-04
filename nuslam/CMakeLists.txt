@@ -7,18 +7,71 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
+find_package(nuturtlebot_msgs REQUIRED)
+find_package(turtlelib REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(nusim REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(nuturtle_control REQUIRED)
 
-add_executable(my_node src/my_node.cpp)
-target_include_directories(my_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_features(my_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+###########
+## Build ##
+###########
 
-install(TARGETS my_node
-  DESTINATION lib/${PROJECT_NAME})
+ament_export_dependencies(
+  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs
+  nuturtlebot_msgs nav_msgs tf2 tf2_geometry_msgs
+  nusim nuturtle_control
+)
+
+set(NUSLAM_AMENT_TARGET_DEPENDENCIES
+  rclcpp geometry_msgs sensor_msgs std_msgs std_srvs
+  nuturtlebot_msgs nav_msgs tf2 tf2_geometry_msgs
+  nusim nuturtle_control
+)
+
+set(NUSLAM_TARGET_LINK_LIBRARIES
+  yaml-cpp
+  turtlelib::turtlelib
+  "${cpp_typesupport_target}"
+)
+
+# nuslam node
+add_executable(nuslam src/nuslam.cpp)
+set_target_properties(nuslam
+  PROPERTIES
+  OUTPUT_NAME nuslam
+  PREFIX ""
+)
+ament_target_dependencies(nuslam
+  ${NUSLAM_AMENT_TARGET_DEPENDENCIES}
+)
+target_link_libraries(nuslam
+  ${NUSLAM_TARGET_LINK_LIBRARIES}
+)
+
+#############
+## Install ##
+#############
+
+install(TARGETS
+  nuslam
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
