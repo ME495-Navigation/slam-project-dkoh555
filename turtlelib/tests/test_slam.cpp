@@ -8,10 +8,10 @@
 using Catch::Matchers::WithinAbs;
 
 namespace turtlelib {
-    
-    arma::mat test_matrix = arma::mat(2, 2, arma::fill::eye);
 
     TEST_CASE("initial_armadillo_test", "slam") {
+        arma::mat test_matrix = arma::mat(2, 2, arma::fill::eye);
+        
         auto val = test_matrix(0, 0);
         REQUIRE(val == 1);
 
