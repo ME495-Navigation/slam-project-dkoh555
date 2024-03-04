@@ -21,9 +21,9 @@ namespace turtlelib
         // Modifiable Variables (Can modify for other robots or scenarios)
         //
         /// \brief Number of elements in column vector q_t
-        int q_size = 3;
+        arma::uword q_size = 3;
         /// \brief Maximum number of landmarks in the map (affects dimensions of other vectors)
-        int max_landmarks = 10;
+        arma::uword max_landmarks = 10;
         /// \brief Process noise for the robot's motion model (variance)
         double W_noise = 0.001;
         /// \brief Measurement noise for the robot's sensor model for landmarks (variance)

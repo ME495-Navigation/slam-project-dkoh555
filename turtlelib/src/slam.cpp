@@ -15,8 +15,8 @@ namespace turtlelib
     Slam::Slam(Transform2D robot_position, int new_q_size, int new_max_landmarks, double new_W_noise, double new_R_noise)
     {
         set_q_t(robot_position);
-        q_size = new_q_size;
-        max_landmarks = new_max_landmarks;
+        q_size = static_cast<arma::uword>(new_q_size);
+        max_landmarks = static_cast<arma::uword>(new_max_landmarks);
         W_noise = new_W_noise;
         R_noise = new_R_noise;
     }
