@@ -5,6 +5,7 @@ project(turtlelib)
 
 # Include the armadillo library
 find_package(Armadillo)
+include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 # Create a library
 add_library(${PROJECT_NAME} src/geometry2d.cpp src/se2d.cpp
@@ -22,9 +23,11 @@ target_include_directories(${PROJECT_NAME}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
     $<INSTALL_INTERFACE:include/>)
 
+# Link the armadillo library
+target_link_libraries(${PROJECT_NAME} ${ARMADILLO_LIBRARIES})
 # frame_main executable
 add_executable(frame_main src/frame_main.cpp)
-target_link_libraries(frame_main turtlelib)
+target_link_libraries(frame_main ${PROJECT_NAME})
 install(TARGETS frame_main turtlelib
         EXPORT turtlelib-targets)
 
