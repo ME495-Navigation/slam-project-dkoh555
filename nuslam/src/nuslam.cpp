@@ -256,21 +256,33 @@ private:
 
         // Publish the path
         odom_path_publish();
-
-        //
-        // SLAM STUFF
-        //
-        // Update the SLAM object with the new twist
-        slam_turtlebot.predict_and_update_xi(curr_twist);
-        slam_turtlebot.propogate_and_update_sigma();
-        // With xi_t updated, update q_t and m_t
-        slam_turtlebot.update_q_t_m_t();
     }
 
     void fake_sensor_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
     {
-        // RCLCPP_INFO(
-        //       get_logger(), "fake_sensor_callback");
+        //
+        // SLAM PREDICTION AND UPDATE
+        //
+        // Find transform between prev_robot and curr_robot
+        slam_tf_odom_curr_robot = turtlebot.get_position();
+        Transform2D slam_tf_prev_robot_curr_robot = slam_tf_odom_prev_robot.inverse() * slam_tf_odom_curr_robot;
+
+        // Determine the twist the robot has undergone to achieve that transform
+        Twist2D predicted_slam_twist = turtlelib::twist_from_transform(slam_tf_prev_robot_curr_robot);
+
+        // Update the SLAM object with this new-found twist
+        slam_turtlebot.predict_and_update_xi(predicted_slam_twist);
+        slam_turtlebot.propogate_and_update_sigma();
+        // With xi_t updated, update q_t and m_t
+        slam_turtlebot.update_q_t_m_t();
+
+        // Update the previous robot position
+        slam_tf_odom_prev_robot = slam_tf_odom_curr_robot;
+
+        //
+        // SENSOR MEASUREMENT
+        //
+        visualization_msgs::msg::MarkerArray::SharedPtr sensed_features = msg;
     }
 
     //
