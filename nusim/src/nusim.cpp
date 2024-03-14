@@ -175,13 +175,14 @@ public:
     // TIMER
     //
     timer_ = this->create_wall_timer(1.0s / frequency, std::bind(&nusimNode::timer_callback, this));
+    slow_timer_ = this->create_wall_timer(1.0s / 5, std::bind(&nusimNode::slow_timer_callback, this));
   }
 
 private:
   //
   // Node-related Declarations
   //
-  rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::TimerBase::SharedPtr timer_, slow_timer_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
   std::unique_ptr<tf2_ros::Buffer> tfBuffer;
   std::shared_ptr<tf2_ros::TransformListener> tfListener;
@@ -212,7 +213,7 @@ private:
   double left_vel, right_vel;
   double input_noise;
   double slip_fraction;
-  rclcpp::Time start_period;
+  rclcpp::Time current_time;
   double basic_sensor_variance;
   double max_range;
   double min_lidar_range, max_lidar_range, lidar_angle_incr, lidar_resolution, lidar_noise_level;
@@ -231,11 +232,13 @@ private:
   std::vector<geometry_msgs::msg::PoseStamped> robot_path;
 
   //
-  // TIMER CALLBACK
+  // TIMER CALLBACKS
   //
   /// @brief Timer callback for node, reads joy_state to publish appropriate output messages
   void timer_callback()
   {
+    current_time = this->get_clock()->now();
+
     // Timestep
     std_msgs::msg::UInt64 new_msg;
     new_msg.data = timestep;
@@ -270,7 +273,7 @@ private:
 
     // Update the sensor data
     nuturtlebot_msgs::msg::SensorData sensor_msg;
-    sensor_msg.stamp = rclcpp::Clock().now();
+    sensor_msg.stamp = current_time;
 
     // Convert these angles to encoder ticks
     sensor_msg.right_encoder = turtlebot.get_wheels().right * encoder_ticks_per_rad;
@@ -288,16 +291,13 @@ private:
     // World objects
     wall_broadcast();
     obstacle_broadcast();
+  }
 
-    // Need to check if a time period of 1/5 HZ passed to then
-    // publish fake sensor data
-    rclcpp::Time end_period = rclcpp::Clock().now();
-    if((end_period - start_period) >= rclcpp::Duration(0,2e08))
-    {
-      fake_sensor_broadcast();
-      fake_lidar_broadcast();
-      start_period = end_period;
-    }
+  /// @brief Slower timer callback for node
+  void slow_timer_callback()
+  {
+    fake_sensor_broadcast();
+    fake_lidar_broadcast();
   }
 
   //
@@ -358,7 +358,7 @@ private:
     geometry_msgs::msg::TransformStamped msg;
 
     // Key info
-    msg.header.stamp = rclcpp::Clock().now();
+    msg.header.stamp = current_time;
     msg.header.frame_id = "nusim/world";
     msg.child_frame_id = "red/base_footprint";
 
@@ -406,7 +406,7 @@ private:
     nav_msgs::msg::Path msg;
 
     // Key info
-    msg.header.stamp = rclcpp::Clock().now();
+    msg.header.stamp = current_time;
     msg.header.frame_id = "nusim/world";
 
     // Vector of Poses
@@ -440,7 +440,7 @@ private:
     // Fill in the LaserScan message fields
     sensor_msgs::msg::LaserScan msg;
     msg.ranges.clear(); // Clear the ranges array to get rid of "ghost" points
-    msg.header.stamp = rclcpp::Clock().now();
+    msg.header.stamp = current_time;
     msg.header.frame_id = "red/base_scan";
     msg.angle_min = 0.0;
     msg.angle_max = 2 * PI;
@@ -648,7 +648,7 @@ private:
     visualization_msgs::msg::Marker wall;
 
     for (int i = 0; i <= 3; i++) {
-      wall.header.stamp = rclcpp::Clock().now();
+      wall.header.stamp = current_time;
       wall.header.frame_id = "nusim/world";
       wall.id = i;
       wall.type = 1;
@@ -694,7 +694,7 @@ private:
     visualization_msgs::msg::MarkerArray obs_array;
     for (size_t i = 0; i < obx_arr.size(); i++) {
       visualization_msgs::msg::Marker obs;
-      obs.header.stamp = rclcpp::Clock().now();
+      obs.header.stamp = current_time;
       obs.header.frame_id = "nusim/world";
       obs.id = i;
       obs.type = 3;
@@ -723,9 +723,18 @@ private:
     for (size_t i = 0; i < obx_arr.size(); i++) {
       visualization_msgs::msg::Marker obs;
       obs.header.stamp = rclcpp::Clock().now();
-      obs.header.frame_id = "nusim/world";
+      // obs.header.frame_id = "nusim/world";
+      obs.header.frame_id = "red/base_footprint"; // The sensor readings are relative to the robot's position
       obs.id = i;
       obs.type = 3;
+      obs.lifetime = rclcpp::Duration(0, 5e8);
+
+      // RCLCPP_INFO_STREAM(
+      //         get_logger(), "x: " << x << " y: " << y << " theta: " << theta);
+
+      // Determine the tranform from robot to obstacle
+      Transform2D tf_robot_obstacle = turtlebot.get_position().inv() * Transform2D(Vector2D{obx_arr[i], oby_arr[i]});
+
       // Check if the object is within the sensor range, if so add it, if not delete it
       if(in_range(x, y, this->obx_arr[i], this->oby_arr[i], max_range))
       {
@@ -742,8 +751,8 @@ private:
       obs.color.a = 1.0;
 
       // Add in the Gaussian noise
-      obs.pose.position.x = this->obx_arr[i] + obstacle_noise_generator(num_generator::get_random());
-      obs.pose.position.y = this->oby_arr[i] + obstacle_noise_generator(num_generator::get_random());
+      obs.pose.position.x = tf_robot_obstacle.translation().x + obstacle_noise_generator(num_generator::get_random());
+      obs.pose.position.y = tf_robot_obstacle.translation().y + obstacle_noise_generator(num_generator::get_random());
       obs.pose.position.z = 0.125;
       obs.scale.x = this->obr * 2;
       obs.scale.y = this->obr * 2;
@@ -810,6 +819,8 @@ private:
   //
   void init_var()
   { 
+    current_time = this->get_clock()->now();
+    
     timestep = 0;
     x = x0;
     y = y0;
@@ -834,10 +845,6 @@ private:
 
     // Generate a lidar gaussian variable
     lidar_noise_generator = std::normal_distribution<>{0, lidar_noise_level};
-
-    // Initialize a clock reading for tracking fake sensor data
-    start_period = rclcpp::Clock().now();
-
   }
 
   bool params_unfilled()
