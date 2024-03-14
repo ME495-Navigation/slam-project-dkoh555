@@ -22,6 +22,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(nusim REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(nuturtle_control REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 ###########
 ## Build ##
@@ -36,7 +37,7 @@ ament_export_dependencies(
 set(NUSLAM_AMENT_TARGET_DEPENDENCIES
   rclcpp geometry_msgs sensor_msgs std_msgs std_srvs
   nuturtlebot_msgs nav_msgs tf2 tf2_geometry_msgs
-  nusim nuturtle_control
+  nusim nuturtle_control visualization_msgs
 )
 
 set(NUSLAM_TARGET_LINK_LIBRARIES

@@ -90,6 +90,9 @@ namespace turtlelib
         /// \brief Propogate the uncertainty of the prediction (equation 21 implementation), to be used after predict_and_update_xi()
         void propogate_and_update_sigma();
     };
+
+    /// \brief Returns the twist required to attain a given transformation
+    Twist2D twist_from_transform(const Transform2D& transform);
 }
 
 #endif

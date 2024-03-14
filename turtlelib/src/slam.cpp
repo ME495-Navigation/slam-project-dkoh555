@@ -120,4 +120,18 @@ namespace turtlelib
         // Implement equation 21
         sigma_t = A * sigma_t * A.t() + Q_bar;
     }
+
+    Twist2D twist_from_transform(const Transform2D& transform)
+    {
+        // Check for pure linear transformation
+        if(almost_equal(transform.rotation(), 0.0) && almost_equal(transform.translation().y, 0.0))
+        {
+            return Twist2D{0.0, transform.translation().x, 0.0};
+        }
+        else
+        {
+            double trans = fabs(transform.translation().y / (1 - cos(transform.rotation())));
+            return Twist2D{transform.rotation(), trans * transform.rotation(), 0.0};
+        }
+    }
 }

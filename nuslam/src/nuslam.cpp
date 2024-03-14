@@ -18,9 +18,11 @@
 #include "nav_msgs/msg/path.hpp"
 
 #include "turtlelib/diff_drive.hpp"
+#include "turtlelib/slam.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_ros/transform_broadcaster.h"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nusim/srv/teleport.hpp"
 
@@ -98,7 +100,7 @@ public:
         }
 
         //
-        // Additional variable initialization
+        // Additional variable initialization for diff_drive and slam components
         //
         init_var();
 
@@ -106,6 +108,8 @@ public:
         // SUBSCRIBERS
         //
         joint_states_sub = create_subscription<sensor_msgs::msg::JointState>("joint_states", 10, std::bind(&nuslamNode::joint_states_callback, this, _1));
+        // fake_sensor listener that implements slam w/ each callback
+        fake_sensor_sub = create_subscription<visualization_msgs::msg::MarkerArray>("fake_sensor", 10, std::bind(&nuslamNode::fake_sensor_callback, this, _1));
 
         //
         // PUBLISHERS
@@ -140,6 +144,7 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub;
     rclcpp::Service<nusim::srv::Teleport>::SharedPtr initial_pose_srv;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
+    rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr fake_sensor_sub;
 
     //
     // Variables
@@ -153,9 +158,13 @@ private:
     //
     DiffDrive turtlebot;
     sensor_msgs::msg::JointState latest_joint_states;
+    Slam slam_turtlebot;
 
     // Vectors
     std::vector<geometry_msgs::msg::PoseStamped> odom_path;
+
+    // Transforms
+    Transform2D slam_tf_odom_prev_robot, slam_tf_odom_curr_robot;
 
     //
     // TIMER CALLBACK
@@ -173,6 +182,9 @@ private:
         // Note the received JointState message
         latest_joint_states = *msg;
 
+        //
+        // JOINT STATE STUFF + CALCULATIONS + FIND ROBOT POS RELATIVE TO ODOM
+        //
         // Note the new WheelPosition
         WheelPosition curr_wheel_position{latest_joint_states.position[1], latest_joint_states.position[0]};
         WheelPosition old_wheel_position = turtlebot.get_wheels();
@@ -194,6 +206,13 @@ private:
         //  RCLCPP_INFO(
         //       get_logger(), "y: %f", turtlebot.get_position().translation().y);
 
+        // Broadcast the TF from odom to body
+        tf_odom_robot(turtlebot.get_position().translation().x,
+                    turtlebot.get_position().translation().y, turtlebot.get_position().rotation());
+
+        //
+        // ODOM PATH STUFF
+        //
         // Publish the corresponding odometry message
         // Initialize the odometry message
         nav_msgs::msg::Odometry odom_msg;
@@ -238,9 +257,20 @@ private:
         // Publish the path
         odom_path_publish();
 
-        // Broadcast the TF from odom to body
-        tf_odom_robot(turtlebot.get_position().translation().x,
-                    turtlebot.get_position().translation().y, turtlebot.get_position().rotation());
+        //
+        // SLAM STUFF
+        //
+        // Update the SLAM object with the new twist
+        slam_turtlebot.predict_and_update_xi(curr_twist);
+        slam_turtlebot.propogate_and_update_sigma();
+        // With xi_t updated, update q_t and m_t
+        slam_turtlebot.update_q_t_m_t();
+    }
+
+    void fake_sensor_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
+    {
+        // RCLCPP_INFO(
+        //       get_logger(), "fake_sensor_callback");
     }
 
     //
@@ -265,7 +295,7 @@ private:
     //
     // TRANSFORM RELATED
     //
-    // Broadcasts world -> red robot transform
+    // Broadcasts odom -> red robot transform
     void tf_odom_robot(double x_in, double y_in, double theta_in)
     {
         geometry_msgs::msg::TransformStamped msg;
@@ -305,6 +335,15 @@ private:
     {
         // Initialize the diff drive robot
         turtlebot = DiffDrive(wheel_radius, track_width);
+
+        // Initialize the SLAM object
+        slam_turtlebot = Slam(turtlebot.get_position());
+        // With q_t updated, update xi_t
+        slam_turtlebot.update_xi();
+        // Initialize the initial 'guess' values for sigma_t
+        slam_turtlebot.initialize_sigma_t();
+        // Initialize the 'previous' robot position tf
+        slam_tf_odom_prev_robot = turtlebot.get_position();
     }
 
     bool params_string_unfilled()
