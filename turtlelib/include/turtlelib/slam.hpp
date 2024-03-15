@@ -104,6 +104,16 @@ namespace turtlelib
 
         /// \brief Correct the combined state with every new landmark measurement (equation 22 implementation)
         void correct_with_landmark(int x, int y, int landmark_id);
+        
+        //
+        // Getters
+        //
+        /// \brief Return the transform of the robot based on the current state
+        Transform2D get_transform()
+        {
+            return Transform2D{Vector2D{q_t(1), q_t(2)}, q_t(0)};
+        
+        }
     };
 
     /// \brief Returns the twist required to attain a given transformation

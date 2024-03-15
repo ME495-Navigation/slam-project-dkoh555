@@ -20,6 +20,33 @@
             <remap from="fake_sensor" to="nusim/fake_sensor" />
         </node>
 
+        <!-- Publish tfs necessary for slam implementation -->
+        <node pkg="tf2_ros"
+            exec="static_transform_publisher"
+            name="world_odom_broadcaster"
+            args="--frame-id nusim/world 
+                    --child-frame-id map
+                    --x 0 
+                    --y 0 
+                    --z 0 
+                    --qx 0.0 
+                    --qy 0.0 
+                    --qz 0.0 
+                    --qw 1.0"/>
+
+        <node pkg="tf2_ros"
+            exec="static_transform_publisher"
+            name="world_odom_broadcaster"
+            args="--frame-id map
+                    --child-frame-id slam_odom
+                    --x 0 
+                    --y 0 
+                    --z 0 
+                    --qx 0.0 
+                    --qy 0.0 
+                    --qz 0.0 
+                    --qw 1.0"/>
+
         <!-- Load a green turtlebot -->
         <group>
             <push-ros-namespace namespace="green"/>

@@ -56,7 +56,7 @@ public:
         body_id = get_parameter("body_id").as_string();
 
         param_desc.description = "Frame ID of odom frame";
-        declare_parameter("odom_id", "odom", param_desc);
+        declare_parameter("odom_id", "slam_odom", param_desc);
         odom_id = get_parameter("odom_id").as_string();
 
         param_desc.description = "Frame ID of left wheel";
@@ -207,7 +207,7 @@ private:
         //       get_logger(), "y: %f", turtlebot.get_position().translation().y);
 
         // Broadcast the TF from odom to body
-        tf_odom_robot(turtlebot.get_position().translation().x,
+        broadcast_tf_odom_robot(turtlebot.get_position().translation().x,
                     turtlebot.get_position().translation().y, turtlebot.get_position().rotation());
 
         //
@@ -256,6 +256,12 @@ private:
 
         // Publish the path
         odom_path_publish();
+
+        //
+        // SLAM STUFFF
+        //
+        // Broadcast the tf from world to odom to correct robot
+        broadcast_tf_map_slam_odom();
     }
 
     void fake_sensor_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
@@ -284,6 +290,9 @@ private:
         //
         visualization_msgs::msg::MarkerArray::SharedPtr sensed_features = msg;
 
+        // RCLCPP_INFO_STREAM(
+        //         get_logger(), "Total number of features: " << sensed_features->markers.size());
+
         // Correct the robot's configuration for each sensed feature
         for (size_t i = 0; i < sensed_features->markers.size(); i++)
         {
@@ -296,6 +305,9 @@ private:
             {
                 // Correct the robot's configuration with the sensed feature
                 slam_turtlebot.correct_with_landmark(x, y, i);
+
+                // RCLCPP_INFO_STREAM(
+                //     get_logger(), "Corrected!");
             }
         }
     }
@@ -312,7 +324,7 @@ private:
         turtlebot.set_transform(received_trans);
 
         // Broadcast the TF from odom to body
-        tf_odom_robot(turtlebot.get_position().translation().x,
+        broadcast_tf_odom_robot(turtlebot.get_position().translation().x,
                     turtlebot.get_position().translation().y, turtlebot.get_position().rotation());
 
         // Give a successful response
@@ -323,7 +335,7 @@ private:
     // TRANSFORM RELATED
     //
     // Broadcasts odom -> red robot transform
-    void tf_odom_robot(double x_in, double y_in, double theta_in)
+    void broadcast_tf_odom_robot(double x_in, double y_in, double theta_in)
     {
         geometry_msgs::msg::TransformStamped msg;
 
@@ -340,6 +352,45 @@ private:
         // Rotation
         tf2::Quaternion raw_quat;
         raw_quat.setRPY(0, 0, theta_in);
+        // raw_quat.normalize();
+
+        // geometry_msgs::msg::Quaternion quat;
+        // tf2::convert(raw_quat, quat);
+        msg.transform.rotation.x = raw_quat.x();
+        msg.transform.rotation.y = raw_quat.y();
+        msg.transform.rotation.z = raw_quat.z();
+        msg.transform.rotation.w = raw_quat.w();
+
+
+        // Broadcast transform
+        tf_broadcaster->sendTransform(msg);
+    }
+
+    // Broadcasts map -> slam_odom transform
+    void broadcast_tf_map_slam_odom()
+    {
+        // tf from world to slam robot position
+        Transform2D tf_world_slam{slam_turtlebot.get_transform()};
+        // tf from odom to robot (odom) position
+        Transform2D tf_odom_robot{turtlebot.get_position()};
+        // tf from world to odom (assume slam and odom are the same)
+        Transform2D tf_world_odom = tf_world_slam * tf_odom_robot.inv();
+
+        // Broadcast the tf from world to odom
+        geometry_msgs::msg::TransformStamped msg;
+        // Key info
+        msg.header.stamp = latest_joint_states.header.stamp;
+        msg.header.frame_id = "map";
+        msg.child_frame_id = odom_id;
+
+        // Translation
+        msg.transform.translation.x = tf_world_odom.translation().x;
+        msg.transform.translation.y = tf_world_odom.translation().y;
+        msg.transform.translation.z = 0.0;
+
+        // Rotation
+        tf2::Quaternion raw_quat;
+        raw_quat.setRPY(0, 0, tf_world_odom.rotation());
         // raw_quat.normalize();
 
         // geometry_msgs::msg::Quaternion quat;

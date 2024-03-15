@@ -1,4 +1,5 @@
 #include "turtlelib/slam.hpp"
+#include <iostream>
 
 namespace turtlelib
 {
