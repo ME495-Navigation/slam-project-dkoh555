@@ -54,6 +54,18 @@ namespace turtlelib
         arma::mat A = arma::eye(q_size + 2 * max_landmarks, q_size + 2 * max_landmarks);
         /// \brief The process noise matrix for the robot motion model, used to calculate sigma_t
         arma::mat Q{arma::eye(q_size, q_size) * W_noise};
+        /// \brief Set of previously seen landmarks by ID number
+        std::unordered_set<int> seen_landmarks;
+        /// \brief Actual measurement of features in the form of range and bearing, [r1 phi1 r2 phi2 ... rn phin]'
+        arma::colvec zi_t{2, arma::fill::zeros};
+        /// \brief Estimate of feature locations in the form of range and bearing based on robot pose change, [r1 phi1 r2 phi2 ... rn phin]'
+        arma::colvec zi_t_hat{2, arma::fill::zeros};
+        /// \brief H matrix
+        arma::mat Hi_t{2, q_size + 2 * max_landmarks, arma::fill::zeros};
+        /// \brief Sensor noise matrix
+        arma::mat R{2, 2, arma::fill::eye};
+        /// \brief Kalman gain matrix
+        arma::mat Ki_t{3 + 2 * max_landmarks, 2, arma::fill::zeros};
 
 
     public:
@@ -89,6 +101,9 @@ namespace turtlelib
 
         /// \brief Propogate the uncertainty of the prediction (equation 21 implementation), to be used after predict_and_update_xi()
         void propogate_and_update_sigma();
+
+        /// \brief Correct the combined state with every new landmark measurement (equation 22 implementation)
+        void correct_with_landmark(int x, int y, int landmark_id);
     };
 
     /// \brief Returns the twist required to attain a given transformation

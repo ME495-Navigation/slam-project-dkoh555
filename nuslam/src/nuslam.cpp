@@ -265,7 +265,7 @@ private:
         //
         // Find transform between prev_robot and curr_robot
         slam_tf_odom_curr_robot = turtlebot.get_position();
-        Transform2D slam_tf_prev_robot_curr_robot = slam_tf_odom_prev_robot.inverse() * slam_tf_odom_curr_robot;
+        Transform2D slam_tf_prev_robot_curr_robot = slam_tf_odom_prev_robot.inv() * slam_tf_odom_curr_robot;
 
         // Determine the twist the robot has undergone to achieve that transform
         Twist2D predicted_slam_twist = turtlelib::twist_from_transform(slam_tf_prev_robot_curr_robot);
@@ -283,6 +283,21 @@ private:
         // SENSOR MEASUREMENT
         //
         visualization_msgs::msg::MarkerArray::SharedPtr sensed_features = msg;
+
+        // Correct the robot's configuration for each sensed feature
+        for (size_t i = 0; i < sensed_features->markers.size(); i++)
+        {
+            // Note the feature's position
+            double x = sensed_features->markers[i].pose.position.x;
+            double y = sensed_features->markers[i].pose.position.y;
+
+            // Check if the object is detected by the robot
+            if(sensed_features->markers[i].action == visualization_msgs::msg::Marker::ADD)
+            {
+                // Correct the robot's configuration with the sensed feature
+                slam_turtlebot.correct_with_landmark(x, y, i);
+            }
+        }
     }
 
     //

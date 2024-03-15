@@ -17,6 +17,7 @@
             <param name="wheel_right" value="wheel_right_joint"/>
             <remap from="joint_states" to="red/joint_states" />
             <remap from="nav_msgs/path" to="green/nav_msgs/path" />
+            <remap from="fake_sensor" to="nusim/fake_sensor" />
         </node>
 
         <!-- Load a green turtlebot -->
