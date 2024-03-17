@@ -26,13 +26,13 @@ Additionally, attempting to run the integration runs ghost nodes that only exit 
 Photo submission for SLAM implementation in simulation:
 
 
-[insert photo]
+![slam_odom](https://github.com/ME495-Navigation/slam-project-dkoh555/assets/107823507/4004ffc4-d43a-42e4-a711-1d58a31b0955)
 
 
 Video submission for SLAM implementation in simulation:
 
 
-[insert video]
+[slam_odom.webm](https://github.com/ME495-Navigation/slam-project-dkoh555/assets/107823507/ac5ab154-a20f-4abd-aac4-ad4b006a0792)
 
 
 # HW4
