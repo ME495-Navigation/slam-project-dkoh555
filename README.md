@@ -21,3 +21,21 @@ The final odom position was x: 0.064997, y: -0.1335737
 ## Issue: Catch_ros2
 Whilst attempting to run integration tests, I will always receive the 'result_file' does not exist error.
 Additionally, attempting to run the integration runs ghost nodes that only exit when shut down.
+
+# HW3
+Photo submission for SLAM implementation in simulation:
+
+
+[insert photo]
+
+
+Video submission for SLAM implementation in simulation:
+
+
+[insert video]
+
+
+# HW4
+Really sorry but with everything going on this quarter, I didn't have a chance to properly do this task.
+
+(At the beginning of next quarter I will complete this for my own learning and portfolio)
