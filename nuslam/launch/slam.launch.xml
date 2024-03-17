@@ -13,6 +13,7 @@
         <node pkg="nuslam" exec="nuslam">
             <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
             <param name="body_id" value="green/base_footprint"/>
+            <param name="odom_id" value="slam_odom"/>
             <param name="wheel_left" value="wheel_left_joint"/>
             <param name="wheel_right" value="wheel_right_joint"/>
             <remap from="joint_states" to="red/joint_states" />
@@ -23,7 +24,7 @@
         <!-- Publish tfs necessary for slam implementation -->
         <node pkg="tf2_ros"
             exec="static_transform_publisher"
-            name="world_odom_broadcaster"
+            name="world_map_broadcaster"
             args="--frame-id nusim/world 
                     --child-frame-id map
                     --x 0 
@@ -36,7 +37,7 @@
 
         <node pkg="tf2_ros"
             exec="static_transform_publisher"
-            name="world_odom_broadcaster"
+            name="map_slam_odom_broadcaster"
             args="--frame-id map
                     --child-frame-id slam_odom
                     --x 0 

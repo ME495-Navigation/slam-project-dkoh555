@@ -202,9 +202,13 @@ private:
         turtlebot.forward_k(delta_wheel_position);
 
         // RCLCPP_INFO(
-        //       get_logger(), "x: %f", turtlebot.get_position().translation().x);
+        //       get_logger(), "x pos: %f", turtlebot.get_position().translation().x);
         //  RCLCPP_INFO(
-        //       get_logger(), "y: %f", turtlebot.get_position().translation().y);
+        //       get_logger(), "y pos: %f", turtlebot.get_position().translation().y);
+
+        // Broadcast the TF from odom to body
+        broadcast_tf_odom_robot(turtlebot.get_position().translation().x,
+                    turtlebot.get_position().translation().y, turtlebot.get_position().rotation());
 
         //
         // SLAM STUFFF
@@ -212,10 +216,6 @@ private:
         slam_turtlebot.predict_and_update_xi(turtlebot.get_twist());
         // Broadcast the tf from world to odom to correct robot
         broadcast_tf_map_slam_odom();
-
-        // Broadcast the TF from odom to body
-        broadcast_tf_odom_robot(turtlebot.get_position().translation().x,
-                    turtlebot.get_position().translation().y, turtlebot.get_position().rotation());
 
         //
         // ODOM PATH STUFF
@@ -411,9 +411,9 @@ private:
         // RCLCPP_INFO_STREAM(
         //         get_logger(), "odom_x: " << turtlebot.get_position().translation().x << "odom_y: " << turtlebot.get_position().translation().y);
 
-        RCLCPP_INFO_STREAM(
-                get_logger(), "tf_map_odom_x: " << tf_map_odom.translation().x << "tf_map_odom_y: " << tf_map_odom.translation().y
-                    << "tf_map_odom_theta: " << tf_map_odom.rotation());
+        // RCLCPP_INFO_STREAM(
+        //         get_logger(), "tf_map_odom_x: " << tf_map_odom.translation().x << "tf_map_odom_y: " << tf_map_odom.translation().y
+        //             << "tf_map_odom_theta: " << tf_map_odom.rotation());
 
         // Broadcast the tf from world to odom
         geometry_msgs::msg::TransformStamped msg;

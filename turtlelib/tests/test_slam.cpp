@@ -5,6 +5,10 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #define TOLERANCE 1.0e-6
 
+//
+// NOTE FOR TESTS TO WORK THE num_landmarks DEFAULT SIZE IN THE SLAM OBJECT MUST BE SET TO 3
+//
+
 using Catch::Matchers::WithinAbs;
 
 using turtlelib::Slam;
@@ -46,9 +50,9 @@ void ekf_check_state_vector(Slam subject, arma::vec required_state_vector);
 void ekf_check_covariance_matrix(Slam subject, arma::mat required_covariance_matrix);
 void ekf_check_twist(Slam subject, Twist2D required_twist);
 void ekf_check_state_matrix(Slam subject, arma::mat required_state_matrix);
-// void ekf_check_actual_measurement(Slam subject, arma::vec required_actual_measurement);
-// void ekf_check_predicted_measurement(Slam subject, arma::vec required_predicted_measurement);
-// void ekf_check_sensor_matrix(Slam subject, arma::mat required_sensor_matrix);
+void ekf_check_actual_measurement(Slam subject, arma::vec required_actual_measurement);
+void ekf_check_predicted_measurement(Slam subject, arma::vec required_predicted_measurement);
+void ekf_check_sensor_matrix(Slam subject, arma::mat required_sensor_matrix);
 
 namespace turtlelib {
 
@@ -252,6 +256,48 @@ TEST_CASE( "Transform Differentiation works", "[differentiate_transform()]") // 
     REQUIRE_THAT( tf5.translation().y, WithinAbs(tfn5.translation().y, 1.0e-6)); 
 }
 
+TEST_CASE( "Correction works for EKFSlam", "[correct(double, double, size_t)]") // Aditya Nair
+{
+    Pose2D pose{0.0, 0.0, 0.0};
+
+    Slam estimator_ptr = Slam(pose);
+
+    // 1. Check for one-dimensional translation along x-axis
+    Twist2D v1{0, -0.069, 0};
+    estimator_ptr.predict_and_update_xi(v1);
+    estimator_ptr.correct_with_landmark(2.0 + 0.069, 0, 0);
+
+    // Actual measurement
+    arma::vec z_1 = arma::zeros<arma::vec>(2);
+    z_1(0) = 2.0 + 0.069;
+    z_1(1) = 0.0;
+    ekf_check_actual_measurement(estimator_ptr, z_1);
+
+    // Predicted measurement
+    arma::vec z_1_hat = arma::zeros<arma::vec>(2);
+    z_1_hat(0) = 2.069;
+    z_1_hat(1) = 0.0;
+    ekf_check_predicted_measurement(estimator_ptr, z_1_hat);
+
+    // Sensor matrix
+    arma::mat H_1 = arma::zeros<arma::mat>(2, q_size+2*num_landmarks);
+
+    H_1(0,0) = 0;
+    H_1(0,1) = -1;
+    H_1(0,2) = 0;
+    H_1(1,0) = -1;
+    H_1(1,1) = 0;
+    H_1(1,2) = -1/2.069;
+
+    H_1(0,3) = 1;
+    H_1(0,4) = 0;
+    H_1(1,3) = 0;
+    H_1(1,4) = 1/2.069;
+    
+    ekf_check_sensor_matrix(estimator_ptr, H_1);
+}
+
+
 void ekf_check_pose(Slam subject, Pose2D required_pose)
 {
     REQUIRE_THAT( subject.pose().theta, WithinAbs(required_pose.theta,1.0e-6));
@@ -289,30 +335,31 @@ void ekf_check_state_matrix(Slam subject, arma::mat required_state_matrix)
     REQUIRE( arma::approx_equal(subject.state_matrix(), required_state_matrix, "reldiff", 1e-6));
 }
 
-// void ekf_check_actual_measurement(Slam subject, arma::vec required_actual_measurement)
-// {
-//     REQUIRE( arma::approx_equal(subject.actual_measurement(), required_actual_measurement, "reldiff", 1e-6));
-// }
+void ekf_check_actual_measurement(Slam subject, arma::vec required_actual_measurement)
+{
+    // REQUIRE_THAT( subject.actual_measurement()(1), WithinAbs(required_actual_measurement(1),1.0e-6));
+    REQUIRE( arma::approx_equal(subject.actual_measurement(), required_actual_measurement, "reldiff", 1e-6));
+}
 
-// void ekf_check_predicted_measurement(Slam subject, arma::vec required_predicted_measurement)
-// {
-//     // REQUIRE_THAT( subject.predicted_measurement()(0), WithinAbs(required_predicted_measurement(0),1.0e-6));
-//     REQUIRE( arma::approx_equal(subject.predicted_measurement(), required_predicted_measurement, "reldiff", 1e-6));
-// }
+void ekf_check_predicted_measurement(Slam subject, arma::vec required_predicted_measurement)
+{
+    // REQUIRE_THAT( subject.predicted_measurement()(1), WithinAbs(required_predicted_measurement(1),1.0e-6));
+    REQUIRE( arma::approx_equal(subject.predicted_measurement(), required_predicted_measurement, "reldiff", 1e-6));
+}
 
-// void ekf_check_sensor_matrix(Slam subject, arma::mat required_sensor_matrix)
-// {
+void ekf_check_sensor_matrix(Slam subject, arma::mat required_sensor_matrix)
+{
 
-//     for(int i = 0; i < 9; i++)
-//     {
-//         for (int j = 0; j < 2; j++)
-//         {
-//             // REQUIRE_THAT( subject.sensor_matrix()(j,i), WithinAbs(69.0,1.0e-6));
-//             REQUIRE_THAT( subject.sensor_matrix()(j,i), WithinAbs(required_sensor_matrix(j,i),1.0e-6));
-//         }
-//     }
+    for(int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 2; j++)
+        {
+            // REQUIRE_THAT( subject.sensor_matrix()(j,i), WithinAbs(69.0,1.0e-6));
+            REQUIRE_THAT( subject.sensor_matrix()(j,i), WithinAbs(required_sensor_matrix(j,i),1.0e-6));
+        }
+    }
 
-//     REQUIRE_THAT( subject.sensor_matrix().size(), WithinAbs(required_sensor_matrix.size(),1.0e-6));
+    REQUIRE_THAT( subject.sensor_matrix().size(), WithinAbs(required_sensor_matrix.size(),1.0e-6));
     
-//     REQUIRE( arma::approx_equal(subject.sensor_matrix(), required_sensor_matrix, "absdiff", 1e-6));
-// }
+    REQUIRE( arma::approx_equal(subject.sensor_matrix(), required_sensor_matrix, "absdiff", 1e-6));
+}

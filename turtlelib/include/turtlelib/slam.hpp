@@ -25,7 +25,7 @@ namespace turtlelib
         /// \brief Number of elements in column vector q_t
         arma::uword q_size = 3;
         /// \brief Maximum number of landmarks in the map (affects dimensions of other vectors)
-        arma::uword max_landmarks = 3;
+        arma::uword max_landmarks = 10;
         /// \brief Process noise for the robot's motion model (variance)
         double W_noise = 0.001;
         /// \brief Measurement noise for the robot's sensor model for landmarks (variance)
@@ -107,7 +107,7 @@ namespace turtlelib
         void propogate_and_update_sigma();
 
         /// \brief Correct the combined state with every new landmark measurement (equation 22 implementation)
-        void correct_with_landmark(int x, int y, int landmark_id);
+        void correct_with_landmark(double x, double y, int landmark_id);
         
         //
         // Getters
@@ -145,6 +145,20 @@ namespace turtlelib
         arma::mat state_matrix() const
         {
             return A;
+        }
+
+        arma::mat actual_measurement() const
+        {
+            return zi_t;
+        }
+
+        arma::mat predicted_measurement() const
+        {
+            return zi_t_hat;
+        }
+        arma::mat sensor_matrix() const
+        {
+            return Hi_t;
         }
     };
 

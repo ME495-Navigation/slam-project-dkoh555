@@ -145,81 +145,92 @@ namespace turtlelib
         sigma_t = A * sigma_t * A.t() + Q_bar;
     }
 
-    void Slam::correct_with_landmark(int x, int y, int landmark_id_int)
+    void Slam::correct_with_landmark(double x, double y, int landmark_id_int)
     {
-        // // Convert the landmark id to a arma::uword to avoid warning
-        // arma::uword landmark_id = static_cast<arma::uword>(landmark_id_int);
+        // Convert the landmark id to a arma::uword to avoid warning
+        arma::uword landmark_id = static_cast<arma::uword>(landmark_id_int);
 
-        // // Convert cartensian coordinates to range and bearing
-        // double range = std::sqrt(std::pow(x - q_t(1), 2) + std::pow(y - q_t(2), 2));
-        // double bearing = std::atan2(x, y);
+        // Convert cartensian coordinates to range and bearing
+        double range = std::sqrt(std::pow(x, 2) + std::pow(y, 2));
+        double bearing = std::atan2(y, x);
 
-        // // Check to see if landmark has been seen before,
-        // // If not then add it
-        // if(seen_landmarks.find(landmark_id) == seen_landmarks.end())
-        // {
-        //     // Add the landmark to the set of seen landmarks
-        //     seen_landmarks.insert(landmark_id);
+        // Check to see if landmark has been seen before,
+        // If not then add it
+        if(seen_landmarks.find(landmark_id) == seen_landmarks.end())
+        {
+            // Add the landmark to the set of seen landmarks
+            seen_landmarks.insert(landmark_id);
 
-        //     // Add the landmark to the predicted map state vector
-        //     // (remember that it is relative to the world frame, not the robot frame)
-        //     m_t(2 * landmark_id) = x + range + cos(bearing + q_t(0));
-        //     m_t(2 * landmark_id + 1) = y + range + sin(bearing + q_t(0));
+            // Add the landmark to the predicted map state vector
+            // (remember that it is relative to the world frame, not the robot frame)
+            m_t(2 * landmark_id) = q_t(1) + range * cos(bearing + q_t(0));
+            m_t(2 * landmark_id + 1) = q_t(2) + range * sin(bearing + q_t(0));
+            // std::cout << "Landmark position: " << m_t(2) << ", " << m_t(3) << std::endl;
 
-        //     // Update the state vector
-        //     update_xi();
-        // }
+            // Update the state vector
+            update_xi();
+        }
 
-        // // Note the actual measurement of the feature
-        // zi_t(0) = range;
-        // zi_t(1) = bearing;
+        // Note the actual measurement of the feature
+        zi_t(0) = range;
+        zi_t(1) = bearing;
 
-        // // Relative prediction of the feature
-        // Vector2D landmark_rel_pred{m_t(2 * landmark_id) - q_t(1), m_t(2 * landmark_id + 1) - q_t(2)};
+        // Relative prediction of the feature
+        Vector2D landmark_rel_pred{m_t(2 * landmark_id) - q_t(1), m_t((2 * landmark_id) + 1) - q_t(2)};
         // double rel_pred_sqrd = std::pow(landmark_rel_pred.x, 2) + std::pow(landmark_rel_pred.y, 2); // THIS OKAY?
+        double rel_pred_sqrd = std::pow(magnitude(landmark_rel_pred), 2);
 
-        // // Relative predicion of feature as range and bearing
-        // double range_hat = std::sqrt(rel_pred_sqrd);
-        // double bearing_hat = normalize_angle(std::atan2(landmark_rel_pred.y, landmark_rel_pred.x) - q_t(0));
-        // zi_t_hat(0) = range_hat;
-        // zi_t_hat(1) = bearing_hat;
+        // Relative predicion of feature as range and bearing
+        double range_hat = std::sqrt(rel_pred_sqrd);
+        double bearing_hat = normalize_angle(std::atan2(landmark_rel_pred.y, landmark_rel_pred.x) - q_t(0));
+        zi_t_hat(0) = range_hat;
+        zi_t_hat(1) = bearing_hat;
 
-        // // H matrix calculations
-        // arma::mat small_H_1{2, q_size, arma::fill::zeros};
-        // arma::mat zeros_2_1{2, 2 * landmark_id, arma::fill::zeros};
-        // arma::mat small_H_2{2, 2, arma::fill::zeros};
-        // arma::mat zeros_2_2{2, 2 * max_landmarks - 2 * (landmark_id + 1), arma::fill::zeros};
+        // std::cout << "Robot position: " << q_t(1) << ", " << q_t(2) << ", theta: " << q_t(0) << std::endl;
+        // std::cout << "range: " << range << ", bearing: " << bearing << std::endl;
+        
+        // std::cout << "landmark_rel_pred: " << landmark_rel_pred.x << ", " << landmark_rel_pred.y << std::endl;
+        // std::cout << "rel_pred_sqrd: " << rel_pred_sqrd << std::endl;
+        // std::cout << "range_hat: " << range_hat << ", bearing_hat: " << bearing_hat << std::endl;
 
-        // small_H_1(0, 0) = 0.0;
-        // small_H_1(0, 1) = -landmark_rel_pred.x / std::sqrt(rel_pred_sqrd);
-        // small_H_1(0, 2) = -landmark_rel_pred.y / std::sqrt(rel_pred_sqrd);
-        // small_H_1(1, 0) = -1;
-        // small_H_1(1, 1) = landmark_rel_pred.y / rel_pred_sqrd;
-        // small_H_1(1, 2) = -landmark_rel_pred.x / rel_pred_sqrd;
+        // H matrix calculations
+        arma::mat small_H_1{2, q_size, arma::fill::zeros};
+        arma::mat zeros_2_1{2, 2 * landmark_id, arma::fill::zeros};
+        arma::mat small_H_2{2, 2, arma::fill::zeros};
+        arma::mat zeros_2_2{2, 2 * max_landmarks - 2 * (landmark_id + 1), arma::fill::zeros};
 
-        // small_H_2(0, 0) = landmark_rel_pred.x / std::sqrt(rel_pred_sqrd);
-        // small_H_2(0, 1) = landmark_rel_pred.y / std::sqrt(rel_pred_sqrd);
-        // small_H_2(1, 0) = -landmark_rel_pred.y / rel_pred_sqrd;
-        // small_H_2(1, 1) = landmark_rel_pred.x / rel_pred_sqrd;
+        small_H_1(0, 0) = 0.0;
+        small_H_1(0, 1) = -landmark_rel_pred.x / std::sqrt(rel_pred_sqrd);
+        small_H_1(0, 2) = -landmark_rel_pred.y / std::sqrt(rel_pred_sqrd);
+        small_H_1(1, 0) = -1;
+        small_H_1(1, 1) = landmark_rel_pred.y / rel_pred_sqrd;
+        small_H_1(1, 2) = -landmark_rel_pred.x / rel_pred_sqrd;
 
-        // Hi_t = arma::join_horiz(arma::join_horiz(small_H_1, zeros_2_1), arma::join_horiz(small_H_2, zeros_2_2));
+        small_H_2(0, 0) = landmark_rel_pred.x / std::sqrt(rel_pred_sqrd);
+        small_H_2(0, 1) = landmark_rel_pred.y / std::sqrt(rel_pred_sqrd);
+        small_H_2(1, 0) = -landmark_rel_pred.y / rel_pred_sqrd;
+        small_H_2(1, 1) = landmark_rel_pred.x / rel_pred_sqrd;
 
-        // // Sensor noise matrix calculations
-        // R = arma::mat{2, 2, arma::fill::eye} * R_noise;
-        // // Kalman gain matrix calulations
-        // Ki_t = sigma_t * Hi_t.t() * (Hi_t * sigma_t * Hi_t.t() + R).i();
+        Hi_t = arma::join_horiz(arma::join_horiz(small_H_1, zeros_2_1), arma::join_horiz(small_H_2, zeros_2_2));
 
-        // // Compare zi_t and zi_t_hat and adjust state accordingly
-        // arma::colvec zi_diff{2, arma::fill::zeros};
-        // zi_diff(0) = zi_t(0) - zi_t_hat(0);
-        // zi_diff(1) = normalize_angle(zi_t(1) - zi_t_hat(1));
-        // xi_t = xi_t + Ki_t * zi_diff;
+        std::cout << "Hi_t matrix size: " << Hi_t.size() << std::endl;
 
-        // // Update q_t and m_t
-        // update_q_t_m_t();
+        // Sensor noise matrix calculations
+        R = arma::mat{2, 2, arma::fill::eye} * R_noise;
+        // Kalman gain matrix calulations
+        Ki_t = sigma_t * Hi_t.t() * (Hi_t * sigma_t * Hi_t.t() + R).i();
 
-        // // Update the covariance again
-        // sigma_t = (I - Ki_t * Hi_t) * sigma_t;
+        // Compare zi_t and zi_t_hat and adjust state accordingly
+        arma::colvec zi_diff{2, arma::fill::zeros};
+        zi_diff(0) = zi_t(0) - zi_t_hat(0);
+        zi_diff(1) = normalize_angle(zi_t(1) - zi_t_hat(1));
+        xi_t = xi_t + Ki_t * zi_diff;
+
+        // Update q_t and m_t
+        update_q_t_m_t();
+
+        // Update the covariance again
+        sigma_t = (I - Ki_t * Hi_t) * sigma_t;
     }
 
     Twist2D twist_from_transform(const Transform2D& transform)
