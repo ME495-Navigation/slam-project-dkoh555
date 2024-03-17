@@ -4,8 +4,8 @@
     x: 0.0
     y: 0.0
     theta: 0.0
-    arena_x_length: 2.5
-    arena_y_length: 2.5
+    arena_x_length: 4.0
+    arena_y_length: 4.0
     obstacles/x: [-0.5, 0.8, 0.4, -0.3, 0.3]
     obstacles/y: [-0.7, -0.8, 0.8, 0.4, -0.5]
     obstacles/r: 0.038

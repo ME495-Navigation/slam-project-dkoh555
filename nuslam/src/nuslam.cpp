@@ -117,6 +117,9 @@ public:
         odom_pub = create_publisher<nav_msgs::msg::Odometry>("odom", 100);
         // Publishing the path taken
         path_pub = create_publisher<nav_msgs::msg::Path>("nav_msgs/path", 100);
+        // Publishing the estimate obstacle positions according to sensor data
+        rclcpp::QoS qos = rclcpp::QoS(rclcpp::KeepLast(50)).transient_local();
+        obs_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/obstacles", qos);
 
         //
         // SERVICE
@@ -145,6 +148,7 @@ private:
     rclcpp::Service<nusim::srv::Teleport>::SharedPtr initial_pose_srv;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
     rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr fake_sensor_sub;
+    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obs_pub;
 
     //
     // Variables
@@ -224,17 +228,17 @@ private:
         // Initialize the odometry message
         nav_msgs::msg::Odometry odom_msg;
         odom_msg.header.stamp = latest_joint_states.header.stamp;
-        odom_msg.header.frame_id = odom_id;
+        odom_msg.header.frame_id = "map";
         odom_msg.child_frame_id = body_id;
 
         // Fill in the positional information
         geometry_msgs::msg::Pose robot_pose;
-        robot_pose.position.x = turtlebot.get_position().translation().x;
-        robot_pose.position.y = turtlebot.get_position().translation().y;
+        robot_pose.position.x = slam_turtlebot.get_transform().translation().x;
+        robot_pose.position.y = slam_turtlebot.get_transform().translation().y;
 
         // Use a tf2 object and function to convert roll pitch yaw into quaternion
         tf2::Quaternion tf2_robot_quaternion;
-        tf2_robot_quaternion.setRPY(0.0, 0.0, turtlebot.get_position().rotation());
+        tf2_robot_quaternion.setRPY(0.0, 0.0, slam_turtlebot.get_transform().rotation());
         // tf2_robot_quaternion.normalize(); // Ensure the quaternion's magnitude is 1
         // Then convert that tf2 quaternion into a suitable quaternion message
 
@@ -246,7 +250,7 @@ private:
         robot_pose.orientation.w = tf2_robot_quaternion.w();
 
         // Retrieve the current twist of the robot and fill in twist message information
-        Twist2D curr_twist = turtlebot.get_twist();
+        Twist2D curr_twist = slam_turtlebot.twist();
         geometry_msgs::msg::Twist robot_twist;
         robot_twist.linear.x = curr_twist.x;
         robot_twist.linear.y = curr_twist.y;
@@ -267,6 +271,31 @@ private:
 
     void fake_sensor_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
     {
+        visualization_msgs::msg::MarkerArray obs_array;
+
+        for (size_t i = 0; i < msg->markers.size(); i++) {
+            visualization_msgs::msg::Marker obs;
+            obs.header.stamp = msg->markers[i].header.stamp;
+            obs.header.frame_id = body_id;
+            obs.id = i;
+            obs.type = msg->markers[i].type;
+            obs.action = msg->markers[i].action;
+
+            obs.color.r = 0.0;
+            obs.color.g = 1.0;
+            obs.color.b = 0.0;
+            obs.color.a = 1.0;
+
+            obs.pose.position.x = msg->markers[i].pose.position.x;
+            obs.pose.position.y = msg->markers[i].pose.position.y;
+            obs.pose.position.z = msg->markers[i].pose.position.z;
+            obs.scale.x = msg->markers[i].scale.x;
+            obs.scale.y = msg->markers[i].scale.y;
+            obs.scale.z = 0.2;
+            obs_array.markers.push_back(obs);
+        }
+
+        obs_pub->publish(obs_array);
         //
         // SLAM PREDICTION AND UPDATE
         //
@@ -518,7 +547,7 @@ private:
 
         // Key info
         msg.header.stamp = rclcpp::Clock().now();
-        msg.header.frame_id = odom_id;
+        msg.header.frame_id = "map";
 
         // Vector of Poses
         msg.poses = odom_path;
