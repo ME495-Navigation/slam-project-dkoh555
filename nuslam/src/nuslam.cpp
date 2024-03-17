@@ -167,9 +167,6 @@ private:
     // Vectors
     std::vector<geometry_msgs::msg::PoseStamped> odom_path;
 
-    // Transforms
-    Transform2D slam_tf_odom_prev_robot, slam_tf_odom_curr_robot;
-
     //
     // TIMER CALLBACK
     //
@@ -193,22 +190,12 @@ private:
         WheelPosition curr_wheel_position{latest_joint_states.position[1], latest_joint_states.position[0]};
         WheelPosition old_wheel_position = turtlebot.get_wheels();
 
-        // RCLCPP_INFO(
-        //       get_logger(), "curr_left: %f", curr_wheel_position.left);
-        // RCLCPP_INFO(
-        //       get_logger(), "curr_right: %f", curr_wheel_position.right);
-
         // Note the change in WheelPosition
         WheelPosition delta_wheel_position{calc_angle_diff(curr_wheel_position.right, old_wheel_position.right),
                                            calc_angle_diff(curr_wheel_position.left, old_wheel_position.left)};
 
         // Update the robot configuration with forward_k
         turtlebot.forward_k(delta_wheel_position);
-
-        // RCLCPP_INFO(
-        //       get_logger(), "x pos: %f", turtlebot.get_position().translation().x);
-        //  RCLCPP_INFO(
-        //       get_logger(), "y pos: %f", turtlebot.get_position().translation().y);
 
         // Broadcast the TF from odom to body
         broadcast_tf_odom_robot(turtlebot.get_position().translation().x,
@@ -271,6 +258,7 @@ private:
 
     void fake_sensor_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
     {
+        // Publish the obstacle positions according to sensor data
         visualization_msgs::msg::MarkerArray obs_array;
 
         for (size_t i = 0; i < msg->markers.size(); i++) {
@@ -296,60 +284,11 @@ private:
         }
 
         obs_pub->publish(obs_array);
-        //
-        // SLAM PREDICTION AND UPDATE
-        //
-        // // Find transform between prev_robot and curr_robot
-        // slam_tf_odom_curr_robot = turtlebot.get_position();
-        // Transform2D slam_tf_prev_robot_curr_robot = slam_tf_odom_prev_robot.inv() * slam_tf_odom_curr_robot;
-        // // Transform2D slam_tf_prev_robot_curr_robot = slam_tf_odom_curr_robot.inv() * slam_tf_odom_prev_robot;
-
-        // // RCLCPP_INFO_STREAM(
-        // //         get_logger(), "curr_x: " << slam_tf_odom_curr_robot.translation().x << " curr_y: " << slam_tf_odom_curr_robot.translation().y
-        // //              << " curr_theta: " << slam_tf_odom_curr_robot.rotation());
-
-        // // RCLCPP_INFO_STREAM(
-        // //         get_logger(), "prev_x: " << slam_tf_odom_prev_robot.translation().x << " prev_y: " << slam_tf_odom_prev_robot.translation().y
-        // //              << " prev_theta: " << slam_tf_odom_prev_robot.rotation());
-
-        // // RCLCPP_INFO_STREAM(
-        // //         get_logger(), "tf_diff_x: " << slam_tf_prev_robot_curr_robot.translation().x << " tf_diff_y: " << slam_tf_prev_robot_curr_robot.translation().y
-        // //              << " tf_diff_theta: " << slam_tf_prev_robot_curr_robot.rotation());
-
-        // // RCLCPP_INFO_STREAM(
-        // //         get_logger(), "tf_diff_x: " << slam_tf_prev_robot_curr_robot.translation().x << " tf_diff_y: " << slam_tf_prev_robot_curr_robot.translation().y
-        // //              << " tf_diff_theta: " << slam_tf_prev_robot_curr_robot.rotation());
-
-        // // Transform2D test_diff_tf = slam_tf_odom_prev_robot * slam_tf_prev_robot_curr_robot;
-        // // bool diff_tf_correct = (almost_equal(test_diff_tf.translation().x, slam_tf_odom_curr_robot.translation().x) &&
-        // //                        almost_equal(test_diff_tf.translation().y, slam_tf_odom_curr_robot.translation().y) &&
-        // //                        almost_equal(test_diff_tf.rotation(), slam_tf_odom_curr_robot.rotation()));
-        // // RCLCPP_INFO_STREAM(
-        // //         get_logger(), "reverse_correct? " << diff_tf_correct);
-
-        // test_tfs();
-
-        // // Determine the twist the robot has undergone to achieve that transform
-        // Twist2D predicted_slam_twist = turtlelib::twist_from_transform(slam_tf_prev_robot_curr_robot);
-
-        // // RCLCPP_INFO_STREAM(
-        // //         get_logger(), "pred_twist_x: " << predicted_slam_twist.x << " pred_twist_theta: " << predicted_slam_twist.omega);
-
-        // // Update the SLAM object with this new-found twist
-        // slam_turtlebot.predict_and_update_xi(predicted_slam_twist);
-        // // With xi_t updated, update q_t and m_t
-        // slam_turtlebot.update_q_t_m_t();
-
-        // Update the previous robot position
-        slam_tf_odom_prev_robot = slam_tf_odom_curr_robot;
 
         //
         // SENSOR MEASUREMENT
         //
         visualization_msgs::msg::MarkerArray::SharedPtr sensed_features = msg;
-
-        // RCLCPP_INFO_STREAM(
-        //         get_logger(), "Total number of features: " << sensed_features->markers.size());
 
         // Correct the robot's configuration for each sensed feature
         for (size_t i = 0; i < sensed_features->markers.size(); i++)
@@ -363,9 +302,6 @@ private:
             {
                 // Correct the robot's configuration with the sensed feature
                 slam_turtlebot.correct_with_landmark(x, y, i);
-
-                // RCLCPP_INFO_STREAM(
-                //     get_logger(), "Corrected!");
             }
         }
     }
@@ -434,16 +370,6 @@ private:
         // tf from world to odom (assume slam and odom are the same)
         Transform2D tf_map_odom = tf_map_slam * tf_odom_robot.inv();
 
-        // RCLCPP_INFO_STREAM(
-        //         get_logger(), "slam_x: " << slam_turtlebot.get_transform().translation().x << "slam_y: " << slam_turtlebot.get_transform().translation().y);
-
-        // RCLCPP_INFO_STREAM(
-        //         get_logger(), "odom_x: " << turtlebot.get_position().translation().x << "odom_y: " << turtlebot.get_position().translation().y);
-
-        // RCLCPP_INFO_STREAM(
-        //         get_logger(), "tf_map_odom_x: " << tf_map_odom.translation().x << "tf_map_odom_y: " << tf_map_odom.translation().y
-        //             << "tf_map_odom_theta: " << tf_map_odom.rotation());
-
         // Broadcast the tf from world to odom
         geometry_msgs::msg::TransformStamped msg;
         // Key info
@@ -454,20 +380,10 @@ private:
         // Translation
         msg.transform.translation.x = tf_map_odom.translation().x;
         msg.transform.translation.y = tf_map_odom.translation().y;
-        // msg.transform.translation.z = 0.0;
-        // msg.transform.translation.x = 0.0;
-        // msg.transform.translation.y = 0.0;
 
         // Rotation
         tf2::Quaternion raw_quat;
         raw_quat.setRPY(0, 0, tf_map_odom.rotation());
-        // raw_quat.normalize();
-
-        // RCLCPP_INFO_STREAM(
-        //         get_logger(), "tf_map_odom rotation: " << tf_map_odom.rotation());
-
-        // geometry_msgs::msg::Quaternion quat;
-        // tf2::convert(raw_quat, quat);
         msg.transform.rotation.x = raw_quat.x();
         msg.transform.rotation.y = raw_quat.y();
         msg.transform.rotation.z = raw_quat.z();
@@ -493,8 +409,6 @@ private:
         slam_turtlebot.update_xi();
         // Initialize the initial 'guess' values for sigma_t
         slam_turtlebot.initialize_sigma_t();
-        // Initialize the 'previous' robot position tf
-        slam_tf_odom_prev_robot = turtlebot.get_position();
     }
 
     bool params_string_unfilled()
@@ -554,41 +468,6 @@ private:
 
         // Publish the path trace
         path_pub->publish(msg);
-    }
-
-    //
-    // TESTING
-    //
-    void test_tfs()
-    {
-        // Transform2D tf0{Vector2D{0.0, 0.0}, 0.0};
-        Transform2D tf1{Vector2D{0.0925505067, 4.4496879151}, 3.1};
-        // Transform2D tf2 = tf0 * tf1;
-        // Transform2D tf2{Vector2D{5.0, 4.0}, 0.0};
-        // Transform2D tf3 = tf1.inv() * tf2;
-
-        // bool correct = (almost_equal(tf3.translation().x, 4.0) &&
-        //                 almost_equal(tf3.translation().y, 2.0) &&
-        //                 almost_equal(tf3.rotation(), 0.0));
-
-        // RCLCPP_INFO_STREAM(
-        //         get_logger(), "test_correct? " << correct);
-
-        // Determine the twist the robot has undergone to achieve that transform
-        Twist2D test_twist = turtlelib::twist_from_transform(tf1);
-
-        RCLCPP_INFO_STREAM(
-                get_logger(), "test_twist_x: " << test_twist.x << " test_twist_y: " << test_twist.y << " test_twist_theta: " << test_twist.omega);
-        
-        Transform2D test_integrate = integrate_twist(test_twist);
-
-        RCLCPP_INFO_STREAM(
-                get_logger(), "tf1_x: " << tf1.translation().x << " tf1_y: " << tf1.translation().y
-                    << " tf1_theta: " << tf1.rotation());
-        
-        RCLCPP_INFO_STREAM(
-                get_logger(), "integrate_test_x: " << test_integrate.translation().x << " integrate_test_y: " << test_integrate.translation().y
-                    << " integrate_test_theta: " << test_integrate.rotation());
     }
 };
 
