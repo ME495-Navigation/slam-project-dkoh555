@@ -11,7 +11,7 @@
 #include <armadillo>
 #include <unordered_set>
 
-#define HIGH_UNCERTAINTY 1e7
+#define HIGH_UNCERTAINTY 1e6
 
 namespace turtlelib
 {
@@ -25,7 +25,7 @@ namespace turtlelib
         /// \brief Number of elements in column vector q_t
         arma::uword q_size = 3;
         /// \brief Maximum number of landmarks in the map (affects dimensions of other vectors)
-        arma::uword max_landmarks = 10;
+        arma::uword max_landmarks = 3;
         /// \brief Process noise for the robot's motion model (variance)
         double W_noise = 0.001;
         /// \brief Measurement noise for the robot's sensor model for landmarks (variance)
@@ -81,9 +81,13 @@ namespace turtlelib
         /// \brief Constructor where SLAM starts with provided configuration and provided key variables
         Slam(Transform2D robot_position, int new_q_size, int new_max_landmarks, double new_W_noise, double new_R_noise);
 
+        Slam(Pose2D turtle_pose_0);
+            
         //
         // Functions
         //
+        void initialize_pose(Pose2D turtle_pose_0);
+
         /// \brief Initialize the initial 'guess' values for sigma_t
         void initialize_sigma_t();
 
@@ -108,11 +112,39 @@ namespace turtlelib
         //
         // Getters
         //
-        /// \brief Return the transform of the robot based on the current state
         Transform2D get_transform()
         {
             return Transform2D{Vector2D{q_t(1), q_t(2)}, q_t(0)};
+        }
+
+        Pose2D pose() const
+        {
+            return Pose2D{q_t(0), q_t(1), q_t(2)};
+        }
+
+        arma::colvec map() const
+        {
+            return m_t;
+        }
+
+        arma::colvec state_vector() const
+        {
+            return xi_t;
+        }
+
+        arma::mat covariance_matrix() const
+        {
+            return sigma_t;
+        }
+
+        Twist2D twist() const
+        {
+            return Twist2D{u_t(0), u_t(1), u_t(2)};
+        }
         
+        arma::mat state_matrix() const
+        {
+            return A;
         }
     };
 

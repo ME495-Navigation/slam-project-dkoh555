@@ -24,6 +24,13 @@ namespace turtlelib
         double y = 0.0;
     };
 
+    struct Pose2D
+    {
+        double theta;
+        double x;
+        double y;
+    };
+
     /// \brief print the Twist2D in the format [w x y]
     /// \param os [in/out] the ostream to write to
     /// \param tw the twist to output
