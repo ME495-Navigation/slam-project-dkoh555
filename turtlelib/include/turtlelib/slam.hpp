@@ -15,7 +15,12 @@
 
 namespace turtlelib
 {
-    /// \brief The EKF SLAM implementation for a differential drive robot
+    /// \class Slam
+    /// \brief Implements Extended Kalman Filter SLAM for a differential drive robot.
+    ///
+    /// This class maintains the robot's pose, map of landmarks, and provides methods
+    /// for initializing the SLAM process, predicting robot motion, and correcting
+    /// the pose and map based on sensor measurements.
     class Slam
     {
     private:
@@ -72,41 +77,68 @@ namespace turtlelib
         //
         // Constructors
         //
-        /// \brief Default constructor where SLAM starts at origin with default key variables
+        /// \brief Initializes the SLAM process with default parameters.
+        /// \details This constructor sets up the SLAM with a default pose at the origin, default noise levels, and initializes the sigma matrix.
         Slam();
 
-        /// \brief Constructor where SLAM starts with provided configuration and default key variables
+        /// \brief Initializes the SLAM process with a specific robot position.
+        /// \param robot_position The starting position of the robot.
+        /// \details This constructor allows setting the initial robot pose while keeping other parameters at their default values.
         Slam(Transform2D robot_position);
 
-        /// \brief Constructor where SLAM starts with provided configuration and provided key variables
-        Slam(Transform2D robot_position, int new_q_size, int new_max_landmarks, double new_W_noise, double new_R_noise);
-
+        /// \brief Initializes the SLAM process with a specific robot position.
+        /// \param turtle_pose_0 The starting position of the robot.
+        /// \details This constructor allows setting the initial robot pose while keeping other parameters at their default values.
         Slam(Pose2D turtle_pose_0);
+
+        /// \brief Initializes the SLAM process with full configuration.
+        /// \param robot_position The starting position of the robot.
+        /// \param new_q_size The size of the pose state vector.
+        /// \param new_max_landmarks The maximum number of landmarks.
+        /// \param new_W_noise The process noise for the robot's motion model.
+        /// \param new_R_noise The measurement noise for the robot's sensor model.
+        /// \details This constructor allows full customization of the initial SLAM setup including pose, landmark capacity, and noise levels.
+        Slam(Transform2D robot_position, int new_q_size, int new_max_landmarks, double new_W_noise, double new_R_noise);
             
         //
         // Functions
         //
+        /// \brief Sets the initial pose of the robot from a Pose2D object.
+        /// \param turtle_pose_0 The initial pose of the robot.
+        /// \details This function initializes the robot's pose and updates the combined state vector accordingly.
         void initialize_pose(Pose2D turtle_pose_0);
 
-        /// \brief Initialize the initial 'guess' values for sigma_t
+        /// \brief Initializes the 'guess' values for the covariance matrix, sigma_t.
+        /// \details Sets the initial uncertainty in the robot's pose and the map, preparing the SLAM for updates.
         void initialize_sigma_t();
 
-        /// \brief Uses current q_t and m_t vectors to update xi_t
+        /// \brief Updates the combined state vector from the current pose and map vectors.
+        /// \details This function consolidates the pose and map into a single state vector for SLAM processing.
         void update_xi();
 
-        /// \brief Uses current xi_t vector to update q_t and m_t
+        /// \brief Updates the pose and map vectors from the current combined state vector.
+        /// \details After adjustments to the combined state, this function applies those changes back to the individual pose and map vectors.
         void update_q_t_m_t();
 
-        /// \brief Set the current state, q_t, of the robot
+        /// \brief Sets the current state of the robot.
+        /// \param config The new pose of the robot as a Transform2D object.
+        /// \details Directly updates the robot's pose within the SLAM process, adjusting the combined state vector as necessary.
         void set_q_t(Transform2D config);
 
-        /// \brief Predict and update the estimate of the combined state vector, xi_t (equation 20 implementation)
+        /// \brief Predicts and updates the estimate of the combined state vector based on input motion.
+        /// \param input The motion twist applied to the robot.
+        /// \details Based on the given twist, this function predicts the next state of the robot and updates the SLAM state.
         void predict_and_update_xi(Twist2D input);
 
-        /// \brief Propogate the uncertainty of the prediction (equation 21 implementation), to be used after predict_and_update_xi()
+        /// \brief Propagates the uncertainty of the prediction and updates the sigma matrix.
+        /// \details After a motion prediction, this function recalculates the uncertainty in the robot's pose and map.
         void propogate_and_update_sigma();
 
-        /// \brief Correct the combined state with every new landmark measurement (equation 22 implementation)
+        /// \brief Corrects the combined SLAM state with a new landmark measurement.
+        /// \param x The x-coordinate of the landmark measurement.
+        /// \param y The y-coordinate of the landmark measurement.
+        /// \param landmark_id The ID of the landmark.
+        /// \details Incorporates a new measurement into the SLAM state, adjusting the robot's pose and map to better fit observed data.
         void correct_with_landmark(double x, double y, int landmark_id);
         
         //
@@ -162,7 +194,10 @@ namespace turtlelib
         }
     };
 
-    /// \brief Returns the twist required to attain a given transformation
+    /// \brief Computes the twist vector necessary to achieve a specified transformation.
+    /// \param transform The target transformation to be achieved.
+    /// \return A Twist2D object representing the required twist (velocity and rotation) to achieve the given transformation.
+    /// \details This function calculates the differential motion (in terms of linear and angular velocity) needed to attain a transformation from the current robot state to the specified target state. It accounts for both translation and rotation, returning the minimal twist that realizes the transformation.
     Twist2D twist_from_transform(const Transform2D& transform);
 }
 
