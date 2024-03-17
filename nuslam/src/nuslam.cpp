@@ -1,3 +1,36 @@
+/// @file
+/// @brief Implements SLAM for a differential drive robot using sensor data to update and correct robot's position.
+///
+/// @details This node integrates wheel odometry and sensor data (simulated or real) to maintain an updated map of
+///          the environment and the robot's position within it. Utilizes an Extended Kalman Filter (EKF) for SLAM.
+///
+/// @section publishers Publishers
+///   - /odom (nav_msgs/Odometry): Publishes the estimated odometry of the robot from SLAM.
+///   - /nav_msgs/path (nav_msgs/Path): Publishes the path taken by the robot as inferred by SLAM.
+///   - ~/obstacles (visualization_msgs/MarkerArray): Publishes markers representing the estimated positions of obstacles.
+///
+/// @section subscribers Subscribers
+///   - /joint_states (sensor_msgs/JointState): Subscribes to the joint states of the robot to estimate motion.
+///   - /fake_sensor (visualization_msgs/MarkerArray): Subscribes to simulated sensor data for landmarks detection.
+///
+/// @section services Services
+///   - /initial_pose (nusim/Teleport): Service to set the initial pose of the robot in the map.
+///
+/// @section broadcasters Broadcasters
+///   - Broadcasts TF transforms representing the relationship between map, odom, and robot frames.
+///
+/// @section parameters Parameters
+///   `frequency (double) [default "95.0"]` - The frequency at which the node operates.
+///   `body_id (string) [default "UNUSED"]` - The TF frame ID of the robot body.
+///   `odom_id (string) [default "slam_odom"]` - The TF frame ID for the odometry frame.
+///   `wheel_left (string) [default "UNUSED"]` - The TF frame ID of the left wheel.
+///   `wheel_right (string) [default "UNUSED"]` - The TF frame ID of the right wheel.
+///   `wheel_radius (double) [default "-1.0"]` - The radius of the robot's wheels.
+///   `track_width (double) [default "-1.0"]` - The distance between the centers of the two wheels.
+///   `motor_cmd_max (double) [default "-1.0"]` - The maximum command value for the motors.
+///   `motor_cmd_per_rad_sec (double) [default "-1.0"]` - The command value per radian/second for the motors.
+///   `encoder_ticks_per_rad (double) [default "-1.0"]` - The number of encoder ticks per radian of wheel rotation.
+
 #include "rclcpp/rclcpp.hpp"
 #include <string>
 #include <cmath>
